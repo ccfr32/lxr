@@ -15,7 +15,7 @@ class Genxref(object):
         
     def feedswish(self, pathname, releaseid, swish):
         if self.st.isdir(pathname, releaseid):
-            dirs, files = self.st.getdir(pathname, releaseid):
+            dirs, files = self.st.getdir(pathname, releaseid)
             for i in dirs + files:
                 self.feedswish(os.path.join(pathname, i),
                                releaseid,
@@ -38,7 +38,7 @@ class Genxref(object):
                 
                 
     def gensearch(self, releaseid):
-        index_file = "%s.%s.index" % (self.tree['trename'], releaseid)
+        index_file = "%s.%s.index" % (self.tree['treename'], releaseid)
         index_file = os.path.join(self.config['swishdirbase'], index_file)
         cmd = '%s -S prog -i stdin -v 1 -c %s -f %s' % (
             self.config['swishbin'],

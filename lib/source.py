@@ -28,7 +28,7 @@ class SourceTree(object):
         real = self.toreal(pathname, releaseid)
         return os.path.isfile(real)
         
-    def getsize(self. pathname, releaseid):
+    def getsize(self, pathname, releaseid):
         return os.path.getsize(sef.toreal(pathname, releaseid))
     
     def toreal(self, pathname, releaseid):
