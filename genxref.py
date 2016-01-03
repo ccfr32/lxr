@@ -19,8 +19,7 @@ class Genxref(object):
             for i in dirs + files:
                 self.feedswish(os.path.join(pathname, i),
                                releaseid,
-                               swish,
-                               filelist)
+                               swish)
         else:
             # filelist.write('%s\n' % pathname)
             if self.st.getsize(pathname, releaseid) > 0:
@@ -45,7 +44,7 @@ class Genxref(object):
             self.config['swishconf'],
             index_file)
         print cmd
-        swish = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+        swish = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True)
         self.feedswish('.', releaseid, swish)
         print swish.communicate()
 
