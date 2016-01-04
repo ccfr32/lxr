@@ -17,15 +17,22 @@ class MainHandler(tornado.web.RequestHandler):
 
     def prepare(self):
         self.page = None
-        self.tree = None
+        self.page_text = ''
+        self.current_tree = None
         self.releaseid = None
         self.detail = {}
         self.detail['trees'] = self.get_all_trees()
-    
+        self.detail['pages'] = {
+            'source': 'Source navigation',
+            'ident': 'Identifier search',
+            'search': 'General search'
+        }
+        
     def get_all_trees(self):
         from conf import trees
         return trees.values()
 
+    
     def get_swish_search(self, search_text):
         return []
 
@@ -50,7 +57,9 @@ class MainHandler(tornado.web.RequestHandler):
         
     def get(self, *args):
         self.page = args[0]
-        self.tree = args[1]
+        self.current_tree = args[1]
+        self.detail['current_tree'] = self.current_tree
+        self.detail['current_page'] = self.page
         if self.page == 'search':
             self.return_search_page()
         elif self.page == 'ident':

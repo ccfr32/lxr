@@ -20,10 +20,10 @@
       <td class="treelink" colspan="3">
 	Available trees: &nbsp;&nbsp;&nbsp;
 	{% for tree in trees %}
-	{% if current_tree['name'] == tree['name'] %}
-	&nbsp;<span class="tree-sel">tree['name']</span>&nbsp;
+	{% if current_tree == tree['name'] %}
+	&nbsp;<span class="tree-sel">{{tree['name']}}</span>&nbsp;
 	{% else %}
-	&nbsp;<a class="treelink" href="/lxr/search/tree['name']">tree['name']</a>&nbsp;	
+	&nbsp;<a class="treelink" href="/lxr/search/{{tree['name']}}">{{tree['name']}}</a>&nbsp;	
 	{% end %}
 	{% end %}
       </td>
@@ -34,33 +34,33 @@
       </td>
       <td>
 	<table class="header">
-	  <tr><td><h1 class="main">redispy</h1></td></tr>
+	  <tr><td><h1 class="main">{{current_tree}}</h1></td></tr>
 	  <tr><td class="banner"></td></tr>
 	</table>
       </td>
       <td class="rightmost">
-	<form method="get" class="modes" action="/lxr/source/redispy">
+	{% for page in ["source", "ident", "search"] %}
+	{% if current_page != page %}
+	<form method="get" class="modes" action="/lxr/{{page}}/{{current_tree}}">
 	  <div class="compact">
-	    <button type="submit" >Source navigation</button>
+	    <button type="submit" >{{pages[page]}}</button>
 	  </div>
 	</form>
-	<form method="get" class="modes" action="/lxr/ident/redispy">
+	{% else %}
+	<form method="get" class="modes-sel" action="/lxr/{{page}}/{{current_tree}}">
 	  <div class="compact">
-	    <button type="submit" >Identifier search</button>
+	    <button type="submit" disabled>{{pages[page]}}</button>
 	  </div>
 	</form>
-	<form method="get" class="modes-sel" action="">
-	  <div class="compact">
-	    <button type="submit" disabled>General search</button>
-	  </div>
-	</form>
+	{% end %}
+	{% end %}
       </td>
     </tr>
     <tr><td colspan='3'>&nbsp;</td></tr>
     <tr>
       <td>&nbsp;</td>
       <td colspan='2' class="rightmost">
-	<form method="get" class="vars" action="/lxr/search/redispy">
+	<form method="get" class="vars" action="/lxr/search/{{current_tree}}">
 	  <p class="compact">
 	    &nbsp;<label>Version:
 	      <select name="!v">
@@ -85,8 +85,8 @@
 <table class="footer">
 <tr>
   <td>[&nbsp;<span class="modes-sel">Source navigation</span>&nbsp;]</td>
-  <td>[&nbsp;<a class="modes" href="/lxr/ident/redis">Identifier search</a>&nbsp;]</td>
-  <td>[&nbsp;<a class="modes" href="/lxr/search/redis">general search</a>&nbsp;]</td>
+  <td>[&nbsp;<a class="modes" href="/lxr/ident/{{current_tree}}">Identifier search</a>&nbsp;]</td>
+  <td>[&nbsp;<a class="modes" href="/lxr/search/{{current_tree}}">general search</a>&nbsp;]</td>
 </tr>
 </table>
 <hr>
