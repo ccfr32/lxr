@@ -23,7 +23,7 @@ config = {
 
 trees = {
     'redispy': {
-        'name': 'redis-py',
+        'name': 'redispy',
         'desc': 'redis-py',
         'sourceroot': os.path.join(source_root, 'redis-py'),
         'all_versions': ['2.4'],
