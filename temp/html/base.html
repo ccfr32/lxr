@@ -84,9 +84,13 @@
 <hr>
 <table class="footer">
 <tr>
-  <td>[&nbsp;<span class="modes-sel">Source navigation</span>&nbsp;]</td>
-  <td>[&nbsp;<a class="modes" href="/lxr/ident/{{current_tree}}">Identifier search</a>&nbsp;]</td>
-  <td>[&nbsp;<a class="modes" href="/lxr/search/{{current_tree}}">general search</a>&nbsp;]</td>
+  {% for page in ["source", "ident", "search"] %}
+  {% if current_page != page %}
+  <td>[&nbsp;<a class="modes" href="/lxr/{{page}}/{{current_tree}}">{{pages[page]}}</a>&nbsp;]</td>
+  {% else %}
+  <td>[&nbsp;<span class="modes-sel">{{pages[page]}}</span>&nbsp;]</td>
+  {% end %}
+  {% end %}
 </tr>
 </table>
 <hr>
