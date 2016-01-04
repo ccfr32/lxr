@@ -41,7 +41,8 @@ class MainHandler(tornado.web.RequestHandler):
         
 
     def return_source_page(self):
-        self.render("fatal.html", **self.detail)
+        self.detail['source_content'] = ''
+        self.render("source.html", **self.detail)
     
     def return_search_page(self):
         self.detail['filetext'] = self.get_argument('filetext', '')
