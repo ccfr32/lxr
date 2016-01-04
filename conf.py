@@ -23,18 +23,11 @@ config = {
 
 trees = {
     'redispy': {
-        'caption': 'Redispy',
-        'shortcaption': 'redispy',
-        'treename': 'redispy',
+        'name': 'redis-py',
+        'desc': 'redis-py',
         'sourceroot': os.path.join(source_root, 'redis-py'),
-        'sourcerootname': '$v',
-        'variables': {
-            'v': {
-                'name': 'Version',
-                'range': ['2.4'],
-                'default': '2.4'
-            }
-        },
+        'all_versions': ['2.4'],
+        'default_version': '2.4',
         'dbname': 'dbi:mysql:dbname=lxr_redispy'
     }
 }
