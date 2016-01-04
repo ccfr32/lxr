@@ -18,6 +18,7 @@ class MainHandler(tornado.web.RequestHandler):
     def prepare(self):
         self.page = None
         self.tree = None
+        self.releaseid = None
         self.detail = {}
         self.detail['trees'] = self.get_all_trees()
     
@@ -26,6 +27,13 @@ class MainHandler(tornado.web.RequestHandler):
 
     def get_swish_search(self, search_text):
         return []
+
+    def return_ident_page(self):
+        self.render("ident.html", **self.detail)
+        
+
+    def return_source_page(self):
+        pass
     
     def return_search_page(self):
         self.detail['filetext'] = self.get_argument('filetext', '')
@@ -33,13 +41,18 @@ class MainHandler(tornado.web.RequestHandler):
         self.detail['results'] = self.get_swish_search('')
         self.detail['advancedchecked'] = self.get_argument('advancedchecked', '')
         self.detail['casesensitivechecked'] = self.get_argument('casesensitivechecked', '')
-        self.render("source.html", **self.detail)
+        self.render("search.html", **self.detail)
         
+
     def get(self, *args):
         self.page = args[0]
         self.tree = args[1]
         if self.page == 'search':
             self.return_search_page()
+        elif self.page == 'ident':
+            self.return_ident_page()
+        elif self.page == 'source':
+            self.return_source_page()
         else:
             self.set_status(404)
 
