@@ -16,9 +16,11 @@ config = {
     'ectagsconf': '/usr/local/share/lxr/templates/ectags.conf',
 
     'virtroot': '/lxr',
+
+    'dbhost': 'localhost',
     'dbuser': 'lxr',
     'dbpass': 'lxrpw',
-    'dbprefix'	: 'lxr_'
+    'dbname': 'lxr',
 }
 
 trees = {

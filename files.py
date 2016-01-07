@@ -1,6 +1,6 @@
 import os
 
-class SourceTree(object):
+class Files(object):
     
     def __init__(self, tree):
         self.rootpath = tree['sourceroot']
@@ -28,6 +28,10 @@ class SourceTree(object):
         real = self.toreal(pathname, releaseid)
         return os.path.isfile(real)
         
+    def gettime(self, pathname, releaseid):
+        mtime = os.path.getmtime(self.toreal(pathname, releaseid))
+        return mtime
+    
     def getsize(self, pathname, releaseid):
         return os.path.getsize(self.toreal(pathname, releaseid))
     
@@ -35,12 +39,16 @@ class SourceTree(object):
         return os.path.abspath(os.path.join(
             self.rootpath, releaseid, pathname))
     
+    def filerev(self, pathname, releaseid):
+        return "-".join([self.getsize(pathname, releaseid),
+                         self.gettime(pathname, releaseid)])
+    
 
 if __name__ == "__main__":
     from conf import trees
     
     for tree in trees.values():
-        st = SourceTree(tree)
-        releaseid = tree['variables']['v']['default']
+        st = Files(tree)
+        releaseid = tree['default_version']
         pathname = '.'
         print st.getdir(pathname, releaseid)
