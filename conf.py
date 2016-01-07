@@ -19,9 +19,9 @@ config = {
     'virtroot': '/lxr',
 
     'dbhost': 'localhost',
-    'dbuser': 'lxr',
-    'dbpass': 'lxrpw',
-    'dbname': 'lxr',
+    'dbuser': raw_input('Input DB USER:'),
+    'dbpass': raw_input('Input DB PASS:'),
+    'dbname': raw_input('Input DB NAME:'),
 }
 
 trees = {

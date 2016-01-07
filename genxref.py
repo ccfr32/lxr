@@ -2,6 +2,7 @@ import os
 import subprocess
 
 from files import Files
+from index import Index
 
 class Genxref(object):
 
@@ -12,10 +13,13 @@ class Genxref(object):
         self.config = config
         self.default_releaseid = tree['default_version']
         self.dfs_filetypes('.', self.default_releaseid)
+        self.index = Index(config, tree)
         for k, v in self.filestype.items():
             print k, v
-        #self.gensearch(self.default_releaseid)
-        #self.dfs_process_file('.', self.default_releaseid)
+        self.gensearch(self.default_releaseid)
+        self.dfs_process_file('.', self.default_releaseid)
+     
+        
         #self.dfs_process_refs('.', self.default_releaseid)
 
         
@@ -56,16 +60,16 @@ class Genxref(object):
 
 
 
-    def _processfile(self, pathname, releaseid, config, files, index):
-        revision = files.filerev(pathname, releaseid)
-        fileid = index.fileid(pathname, revision)
-        index.setfilerelease(fileid, releaseid)
-        
-        if not index.fileindexed(fileid):
-            lang = Lang(pathname, releaseid)
-            ns = lang.indexfile(pathname, path, fileid, index, config)
-            index.flushcache()
-            index.setfileindexed(fileid)
+    def _processfile(self, pathname, releaseid):
+        print 'processfile: %s' % self.files.toreal(pathname, releaseid)
+        revision = self.files.filerev(pathname, releaseid)
+        fileid = self.index.fileid(pathname, revision)
+        #self.index.setfilerelease(fileid, releaseid)
+        if not self.index.fileindexed(fileid):
+            #lang = Lang(pathname, releaseid)
+            #ns = lang.indexfile(pathname, path, fileid, index, config)
+            #self.index.flushcache()
+            self.index.setfileindexed(fileid)
         
         
     def _processrefs(self, pathname, releaseid, config, files, index):
@@ -73,9 +77,9 @@ class Genxref(object):
         fileid = index.fileid(pathname, revision)
         
         if not index.filereferenced(fileid):
-            lang = Lang(pathname, releaseid)
-            ns = lang.referencefile(pathname, path, fileid, index, config)
-            index.flushcache()
+            #lang = Lang(pathname, releaseid)
+            #ns = lang.referencefile(pathname, path, fileid, index, config)
+            #index.flushcache()
             index.setfilereferenced(fileid)
 
 
@@ -95,7 +99,7 @@ class Genxref(object):
         if self.files.isdir(pathname, releaseid):
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
-                self.dfs_process_file(releaseid, pathname)
+                self.dfs_process_file(os.path.join(pathname, i), releaseid)
         elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
             self._processfile(pathname, releaseid)
                 
@@ -104,7 +108,7 @@ class Genxref(object):
         if self.files.isdir(pathname, releaseid):
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
-                self.dfs_process_refs(releaseid, pathname)
+                self.dfs_process_refs(os.path.join(pathname, i), releaseid)
         elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
             self._processrefs(pathname, releaseid)
             

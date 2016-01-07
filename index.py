@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 
+import re
 import MySQLdb
 
 class Index(object):
-
-    def __init__(self, config, tree):
+    
+    def __init__(self, config, tree, initdb=False):
         self.db  = MySQLdb.connect(host=config['dbhost'],
                                    user=config['dbuser'],         
                                    passwd=config['dbpass'],
                                    db=config['dbname'])
-        self.db.autocommit()
-        self.cur = self.db.cursor()
-        
+        self.db.autocommit(True)
+        self.cur = self.db.cursor()   
         self.table_prifix = tree['name']
 
+        if initdb:
+            self.init_table()
+        
         self.filenum = 0
         
         self.files = {}
@@ -103,14 +106,7 @@ class Index(object):
                                 + ' where releaseid = ?'
                                 )
 
-        self.status_select = ("select status from lxr_status"
-                              + ' where fileid = ?'
-                              )
 
-        self.status_update = ("update lxr_status"
-                              + ' set status = ?'
-                              + ' where fileid = ?'
-                              )
         self.status_timestamp = ("select indextime from lxr_status"
                                  + ' where fileid = ?'
                                  )
@@ -176,10 +172,241 @@ class Index(object):
 
 
     def __delete__(self):
-        self.cur.close()
         self.db.commit()
         self.db.close()
+
+    def init_table(self):
+        sqls = [
+            'drop table if exists lxr_filenum;',
+            'drop table if exists lxr_symnum;',
+            'drop table if exists lxr_typenum;',
         
+            'create table lxr_filenum ( rcd int primary key, fid int);',
+            'insert into lxr_filenum (rcd, fid) VALUES (0, 0);',
+        
+            'create table lxr_symnum ( rcd int primary key , sid int);',
+            'insert into lxr_symnum (rcd, sid) VALUES (0, 0);',
+        
+            'create table lxr_typenum ( rcd int primary key, tid int);',
+            'insert into lxr_typenum (rcd, tid) VALUES (0, 0);',
+        
+            'alter table lxr_filenum engine = MyISAM;',
+            'alter table lxr_symnum engine = MyISAM;',
+            'alter table lxr_typenum engine = MyISAM;',
+
+            'drop table if exists lxr_files;',
+            
+            '''
+            create table lxr_files
+	    ( fileid    int                not null primary key
+	    , filename  varbinary(255)     not null
+	    , revision  varbinary(255)     not null
+	    , constraint lxr_uk_files unique (filename, revision)
+	    , index lxr_filelookup (filename)
+	    )
+	    engine = MyISAM;''',
+
+            'drop table if exists lxr_status;',
+            
+            '''
+            create table lxr_status
+	    ( fileid    int     not null primary key
+	    , relcount  int
+	    , indextime int
+	    , status    tinyint not null
+	    , constraint lxr_fk_sts_file foreign key (fileid) references lxr_files(fileid)
+	    )
+	    engine = MyISAM;''',
+
+            'drop trigger if exists lxr_remove_file;',
+            
+            'create trigger lxr_remove_file after delete on lxr_status for each row delete from lxr_files where fileid = old.fileid;',
+
+            'drop table if exists lxr_releases;',
+            
+            '''create table lxr_releases
+	    ( fileid    int            not null
+	    , releaseid varbinary(255) not null
+	    , constraint lxr_pk_releases primary key (fileid, releaseid)
+	    , constraint lxr_fk_rls_fileid foreign key (fileid) references lxr_files(fileid)
+	    )
+	    engine = MyISAM;''',
+
+            'drop trigger if exists lxr_add_release;',
+            
+            '''create trigger lxr_add_release 
+            after insert on lxr_releases for each row update lxr_status set relcount = relcount + 1 where fileid = new.fileid;''',
+            
+            'drop trigger if exists lxr_remove_release;',
+            
+            '''create trigger lxr_remove_release after delete on lxr_releases for each row update lxr_status set relcount=relcount-1, status=0
+            where fileid = old.fileid and relcount > 0;''',
+
+            'drop table if exists lxr_langtypes;',
+            
+            '''create table lxr_langtypes
+	    ( typeid       smallint         not null
+	    , langid       tinyint unsigned not null
+	    , declaration  varchar(255)     not null
+	    , constraint lxr_pk_langtypes
+	    primary key  (typeid, langid)
+	    )
+	    engine = MyISAM;''',
+
+            'drop table if exists lxr_symbols;',
+            
+            '''create table lxr_symbols
+	    ( symid    int            not null                primary key
+	    , symcount int
+	    , symname  varbinary(255) not null unique
+	    )
+	    engine = MyISAM;''',
+
+            'drop procedure if exists lxr_decsym',
+            
+            '''delimiter //
+            create procedure lxr_decsym(in whichsym int)
+            begin
+	    update lxr_symbols
+	    set	symcount = symcount - 1
+	    where symid = whichsym
+	    and symcount > 0;
+            end//
+            delimiter ;''',
+
+            'drop table if exists lxr_definitions;',
+            
+            '''create table lxr_definitions
+	    ( symid   int              not null
+	    , fileid  int              not null
+	    , line    int              not null
+	    , typeid  smallint         not null
+	    , langid  tinyint unsigned not null
+	    , relid   int
+	    , index lxr_i_definitions (symid)
+	    , constraint lxr_fk_defn_symid
+	    foreign key (symid)
+	    references lxr_symbols(symid)
+	    , constraint lxr_fk_defn_fileid
+	    foreign key (fileid)
+	    references lxr_files(fileid)
+	    , constraint lxr_fk_defn_type
+	    foreign key (typeid, langid)
+	    references lxr_langtypes(typeid, langid)
+	    , constraint lxr_fk_defn_relid
+	    foreign key (relid)
+	    references lxr_symbols(symid)
+	    )
+	    engine = MyISAM;''',
+
+            'drop trigger if exists lxr_remove_definition;',
+            
+            '''delimiter //
+            create trigger lxr_remove_definition
+	    after delete on lxr_definitions
+	    for each row
+	    begin
+	    call lxr_decsym(old.symid);
+	    if old.relid is not null
+	    then call lxr_decsym(old.relid);
+	    end if;
+	    end//
+            delimiter ;''',
+
+            'drop table if exists lxr_usages;',
+            
+            '''create table lxr_usages
+	    ( symid   int not null
+	    , fileid  int not null
+	    , line    int not null
+	    , index lxr_i_usages (symid)
+	    , constraint lxr_fk_use_symid
+	    foreign key (symid)
+	    references lxr_symbols(symid)
+	    , constraint lxr_fk_use_fileid
+	    foreign key (fileid)
+	    references lxr_files(fileid)
+	    )
+	    engine = MyISAM;''',
+
+            'drop trigger if exists lxr_remove_usage;',
+            
+            '''
+            create trigger lxr_remove_usage
+	    after delete on lxr_usages
+	    for each row
+	    call lxr_decsym(old.symid);''',
+
+            'drop procedure if exists lxr_PurgeAll',
+            
+            '''delimiter //
+            create procedure lxr_PurgeAll ()
+            begin
+	    set @old_check = @@session.foreign_key_checks;
+	    set session foreign_key_checks = OFF;
+	    truncate table lxr_filenum;
+	    truncate table lxr_symnum;
+	    truncate table lxr_typenum;
+	    insert into lxr_filenum
+	    (rcd, fid) VALUES (0, 0);
+	    insert into lxr_symnum
+	    (rcd, sid) VALUES (0, 0);
+	    insert into lxr_typenum
+	    (rcd, tid) VALUES (0, 0);
+	    truncate table lxr_definitions;
+	    truncate table lxr_usages;
+	    truncate table lxr_langtypes;
+	    truncate table lxr_symbols;
+	    truncate table lxr_releases;
+	    truncate table lxr_status;
+	    truncate table lxr_files;
+	    set session foreign_key_checks = @old_check;
+            end//
+            delimiter ;'''
+            
+        ]
+
+        for sql in sqls:
+            sql = sql.replace('lxr', self.table_prifix)
+
+            try:
+                if sql.find('delimiter') >= 0:
+                    delimiters = re.compile('DELIMITER *(\S*)',re.I)
+                    result = delimiters.split(sql)
+
+                    # Insert default delimiter and separate delimiters and sql
+                    result.insert(0,';') 
+                    delimiter = result[0::2]
+                    section   = result[1::2]
+
+                    # Split queries on delimiters and execute
+                    for i in range(len(delimiter)):
+                        queries = section[i].split(delimiter[i])
+                        for query in queries:
+                            if not query.strip():
+                                continue
+                            self.cur.execute(query)
+                else:
+                    self.cur.execute(sql)
+            except Exception as e:
+                print e
+                print sql
+            self.db.commit()
+        return
+
+    
+
+    def status_select(self, fileid):
+        sql = '''select status from %s_status where fileid = %s''' % (self.table_prifix, fileid)
+        self.cur.execute(sql)
+        ss = [row[0] for row in self.cur.fetchall()]
+        if ss:
+            return ss[0]
+        return None
+
+    def status_update(self, fileid, status):
+        sql = "update %s_status set status = %s where fileid = %s" % (self.table_prifix, status, fileid)
+        return self.cur.execute(sql)
 
     def status_insert(self, fileid, status):
         sql = '''insert into %s_status 
@@ -190,13 +417,13 @@ class Index(object):
         
 
     def files_insert(self, filename, revision, fileid):
-        sql = "insert into %s_files (filename, revision, fileid) values (%s, %s, %s)" % (
+        sql = "insert into %s_files (filename, revision, fileid) values ('%s', '%s', %s)" % (
             self.table_prifix, filename, revision, fileid)
         return self.cur.execute(sql)
         
  
     def fileidifexists(self, pathname, revision):
-        sql = "select fileid from %s_files where filename = '%s' and revision = '%'" % (
+        sql = "select fileid from %s_files where filename = '%s' and revision = '%s'" % (
             self.table_prifix, pathname, revision)
         self.cur.execute(sql)
         ids = [row[0] for row in self.cur.fetchall()]
@@ -216,18 +443,41 @@ class Index(object):
     
 
     def fileindexed(self, fileid):
-        pass
-
-    def setfileindexed(self, fileid):
-        pass
+        status = self.status_select(fileid)
+        if status is not None and status & 1:
+            return True
+        return False
     
+    def setfileindexed(self, fileid):
+        status = self.status_select(fileid)
+        if status is None:
+            self.status_insert(fileid, 1)
+        elif status & 1 == 0:
+            self.status_update(fileid, status ^ 1)
+            
 
     def filereferenced(self, fileid):
-        pass
+        status = self.status_select(fileid)
+        if status is not None and status & 1:
+            return True
+        return False
+
 
     def setfilereferenced(self, fileid):
-        pass
+        status = self.status_select(fileid)
+        if status is None:
+            self.status_insert(fileid, 2)
+        elif status & 1 == 0:
+            self.status_update(fileid, status ^ 2)
+
     
     def flushcache(self):
         pass
     
+
+if __name__ == "__main__":
+    from conf import trees
+    from conf import config
+
+    tree = trees['redispy']
+    index = Index(config, tree, True)

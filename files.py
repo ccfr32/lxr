@@ -91,8 +91,8 @@ class Files(object):
             self.rootpath, releaseid, pathname))
     
     def filerev(self, pathname, releaseid):
-        return "-".join([self.getsize(pathname, releaseid),
-                         self.gettime(pathname, releaseid)])
+        return "-".join([str(self.getsize(pathname, releaseid)),
+                         str(self.gettime(pathname, releaseid))])
     
 
 if __name__ == "__main__":

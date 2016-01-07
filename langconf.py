@@ -141,3 +141,9 @@ def get_python_syntax():
     syntax['reserved'] = syntax['reserved'].split()
     return syntax
 
+
+langs = {
+    'c': get_c_syntax(),
+    'cpp': get_cpp_syntax(),
+    'python': get_python_syntax()
+}
