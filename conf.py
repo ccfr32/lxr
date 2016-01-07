@@ -4,9 +4,9 @@ import os
 from subprocess import Popen, PIPE
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-source_root = os.path.join(current_dir, 'source')
+source_root = os.path.join(current_dir, 'data/source')
 template_dir = os.path.join(current_dir, 'temp')
-index_dir = os.path.join(current_dir, 'index')
+index_dir = os.path.join(current_dir, 'data/index')
 
 config = {
     'swishbin': Popen(["which", "swish-e"], stdout=PIPE).communicate()[0].rstrip(),

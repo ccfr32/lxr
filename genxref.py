@@ -10,9 +10,14 @@ class Genxref(object):
         self.filestype = {}
         self.tree = tree
         self.config = config
-        self.defult_releaseid = tree['default_version']
-        self.gensearch(self.defult_releaseid)
-        
+        self.default_releaseid = tree['default_version']
+        self.dfs_filetypes('.', self.default_releaseid)
+        for k, v in self.filestype.items():
+            print k, v
+        #self.gensearch(self.default_releaseid)
+        #self.dfs_process_file('.', self.default_releaseid)
+        #self.dfs_process_refs('.', self.default_releaseid)
+
         
     def feedswish(self, pathname, releaseid, swish):
         if self.files.isdir(pathname, releaseid):
@@ -51,7 +56,7 @@ class Genxref(object):
 
 
 
-    def processfile(self, pathname, releaseid, config, files, index):
+    def _processfile(self, pathname, releaseid, config, files, index):
         revision = files.filerev(pathname, releaseid)
         fileid = index.fileid(pathname, revision)
         index.setfilerelease(fileid, releaseid)
@@ -63,7 +68,7 @@ class Genxref(object):
             index.setfileindexed(fileid)
         
         
-    def processrefs(self, pathname, releaseid, config, files, index):
+    def _processrefs(self, pathname, releaseid, config, files, index):
         revision = files.filerev(pathname, releaseid)
         fileid = index.fileid(pathname, revision)
         
@@ -73,23 +78,35 @@ class Genxref(object):
             index.flushcache()
             index.setfilereferenced(fileid)
 
-        
-    def dfs_process_file(self, releaseid, pathname):
+
+    def dfs_filetypes(self, pathname, releaseid):
+        print pathname, releaseid
+        if self.files.isdir(pathname, releaseid):            
+            dirs, files = self.files.getdir(pathname, releaseid)
+            for i in dirs + files:
+                self.dfs_filetypes(os.path.join(pathname, i), releaseid)
+        else:
+            filetype = self.files.gettype(pathname, releaseid)
+            filename = self.files.toreal(pathname, releaseid)
+            self.filestype[filename] = filetype
+
+            
+    def dfs_process_file(self, pathname, releaseid):
         if self.files.isdir(pathname, releaseid):
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
                 self.dfs_process_file(releaseid, pathname)
         elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
-            self.processfile(pathname, releaseid)
+            self._processfile(pathname, releaseid)
                 
             
-    def dfs_process_refs(self):
+    def dfs_process_refs(self, pathname, releaseid):
         if self.files.isdir(pathname, releaseid):
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
                 self.dfs_process_refs(releaseid, pathname)
         elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
-            self.processrefs(pathname, releaseid)
+            self._processrefs(pathname, releaseid)
             
         
 
