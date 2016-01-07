@@ -55,10 +55,6 @@ class Index(object):
                                + ' where symcount = 0'
                                )
 
-        self.definitions_insert = ("insert into lxr_definitions"
-                                   + ' (symid, fileid, line, langid, typeid, relid)'
-                                   + ' values (?, ?, ?, ?, ?, ?)'
-                                   )
 
         self.definitions_select = ('select f.filename, d.line, l.declaration, d.relid'
                                    + " from lxr_symbols s, lxr_definitions d"
@@ -470,7 +466,17 @@ class Index(object):
         elif status & 1 == 0:
             self.status_update(fileid, status ^ 2)
 
-    
+
+    def setsymdeclaration(self, symname, fileid, line_no, langid, typeid, relsym):
+        sid = self.symid(symname)
+        relid = self.symid(relsym) or None
+        sql = '''insert into %s_definitions
+        symid, fileid, line, langid, typeid, relid
+        values (%s, %s, %s, %s, %s, %s)
+        ''' % (self.table_prifix, sid, fileid, line_no, langid, typeid, relid)
+        return self.cur.execute(sql)
+        
+            
     def flushcache(self):
         pass
     

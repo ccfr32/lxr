@@ -17,7 +17,8 @@ class Lang(object):
         cmd = '%s %s --excmd=number --language-force=%s -f - %s' %(
             self.config['ectagsbin'], self.config['ectagsopts'],
             self.lang, self.realpath)
-        process = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True)
+        print cmd
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out, err = process.communicate()
         if not out:
             return 0
@@ -25,7 +26,15 @@ class Lang(object):
         for li in lines:
             if not li:
                 continue
-            c_sym, c_file, c_line, c_type, c_ext = li.split("\t")
+            values = li.rstrip().split("\t")
+            print li
+            if len(values) == 5:
+                c_sym, c_file, c_line, c_type, c_ext = values
+            elif len(values) == 4:
+                c_sym, c_file, c_line, c_type = values
+                c_ext = None
+            else:
+                print len(values)
             
         return 0
 
