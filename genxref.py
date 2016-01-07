@@ -3,6 +3,7 @@ import subprocess
 
 from files import Files
 from index import Index
+from lang import Lang
 
 class Genxref(object):
 
@@ -14,8 +15,6 @@ class Genxref(object):
         self.default_releaseid = tree['default_version']
         self.dfs_filetypes('.', self.default_releaseid)
         self.index = Index(config, tree)
-        for k, v in self.filestype.items():
-            print k, v
         self.gensearch(self.default_releaseid)
         self.dfs_process_file('.', self.default_releaseid)
      
@@ -53,10 +52,9 @@ class Genxref(object):
             self.config['swishbin'],
             self.config['swishconf'],
             index_file)
-        print cmd
         swish = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True)
         self.feedswish('.', releaseid, swish)
-        print swish.communicate()
+        out, err = swish.communicate()
 
 
 
@@ -66,8 +64,8 @@ class Genxref(object):
         fileid = self.index.fileid(pathname, revision)
         #self.index.setfilerelease(fileid, releaseid)
         if not self.index.fileindexed(fileid):
-            #lang = Lang(pathname, releaseid)
-            #ns = lang.indexfile(pathname, path, fileid, index, config)
+            lang = Lang(pathname, releaseid, self.files, self.index, self.config)
+            ns = lang.indexfile()
             #self.index.flushcache()
             self.index.setfileindexed(fileid)
         
@@ -77,14 +75,13 @@ class Genxref(object):
         fileid = index.fileid(pathname, revision)
         
         if not index.filereferenced(fileid):
-            #lang = Lang(pathname, releaseid)
-            #ns = lang.referencefile(pathname, path, fileid, index, config)
+            lang = Lang(pathname, releaseid, self.files, self.index, self.config)
+            ns = lang.referencefile()
             #index.flushcache()
             index.setfilereferenced(fileid)
 
 
     def dfs_filetypes(self, pathname, releaseid):
-        print pathname, releaseid
         if self.files.isdir(pathname, releaseid):            
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
