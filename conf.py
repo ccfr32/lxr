@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from subprocess import Popen, PIPE
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 source_root = os.path.join(current_dir, 'source')
@@ -8,11 +9,11 @@ template_dir = os.path.join(current_dir, 'temp')
 index_dir = os.path.join(current_dir, 'index')
 
 config = {
-    'swishbin': '/usr/bin/swish-e',
+    'swishbin': Popen(["which", "swish-e"], stdout=PIPE).communicate()[0].rstrip(),
     'swishconf': os.path.join(template_dir, 'swish-e.conf'),
     'swishdirbase': index_dir,
 
-    'ectagsbin': '/usr/bin/ctags',
+    'ectagsbin': Popen(["which", "ctags"], stdout=PIPE).communicate()[0].rstrip(),
     'ectagsconf': '/usr/local/share/lxr/templates/ectags.conf',
 
     'virtroot': '/lxr',
