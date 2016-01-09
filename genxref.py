@@ -65,7 +65,7 @@ class Genxref(object):
         #self.index.setfilerelease(fileid, releaseid)
         if not self.index.fileindexed(fileid):
             lang = Lang(pathname, releaseid, self.files, self.index, self.config)
-            ns = lang.indexfile()
+            ns = lang.indexfile(fileid)
             #self.index.flushcache()
             self.index.setfileindexed(fileid)
         
@@ -76,7 +76,7 @@ class Genxref(object):
         
         if not index.filereferenced(fileid):
             lang = Lang(pathname, releaseid, self.files, self.index, self.config)
-            ns = lang.referencefile()
+            ns = lang.referencefile(fileid)
             #index.flushcache()
             index.setfilereferenced(fileid)
 

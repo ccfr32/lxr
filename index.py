@@ -467,6 +467,15 @@ class Index(object):
             self.status_update(fileid, status ^ 2)
 
 
+    def symbols_byname(self, symname):
+        return 0, 0
+            
+    def symid(self, symname):
+        if symname in self.symcache:
+            return self.symcache
+        
+        pass
+
     def setsymdeclaration(self, symname, fileid, line_no, langid, typeid, relsym):
         sid = self.symid(symname)
         relid = self.symid(relsym) or None

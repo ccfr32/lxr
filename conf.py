@@ -163,8 +163,8 @@ def get_python_syntax():
         'reserved' : '''and  as  assert break class continue def  del elif else  except exec  False finally for from global if  import in  is lambda None not or pass print raise return self True try while with yield''',
         'spec': [
             {'comment': ['#', '\n']},
-            { 'string': [ '"""', '"""', '\\\\.' ] },
-            { 'string': [ "'''", "'''", "\\\\." ] },
+            {'string': [ '"""', '"""', '\\\\.' ] },
+            {'string': [ "'''", "'''", "\\\\." ] },
             {'string': ['"', '"', '\\\\.']},
             {'string': ["'", "'", "\\\\."]},
             {'include': ['\bimport\b', '\n']},

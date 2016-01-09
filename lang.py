@@ -12,8 +12,9 @@ class Lang(object):
         self.releaseid = releaseid
         self.realpath = files.toreal(pathname, releaseid)
         self.lang = 'Python'
+        self.langid = 7
         
-    def indexfile(self):
+    def indexfile(self, fileid):
         cmd = '%s %s --excmd=number --language-force=%s -f - %s' %(
             self.config['ectagsbin'], self.config['ectagsopts'],
             self.lang, self.realpath)
@@ -35,11 +36,42 @@ class Lang(object):
                 c_ext = None
             else:
                 print len(values)
-            
+            #self.index.setsymdeclaration(c_sym, fileid, c_line, self.langid, c_type, c_ext);
         return 0
 
-    def referencefile(self):
-        return None
+    def referencefile(self, fileid):
+
+        refs = []
+
+        for string, line_no in refs:
+            self.index.setsymreference(string, fileid, line_no)
 
 
+
+    def multilinetwist(self, frag, css):
+        html = '<span class="%s">%s</span>' % (css, frag)
+        html = html.replace("\n", '</span>\n<span class="%s">' % css)
+        html = html.replace('<span class="%s"></span>' % css, '')
+        return html
+
+    def processcomment(self, frag, css):
+        return self.multilinetwist(frag, css)
+
+    def processstring(self, frag, css):
+        return self.multilinetwist(frag, css)
+
+    def processextra(self, frag, css):
+        return self.multilinetwist(frag, css)
+
+    def processinclude(self, frag, dirname):
+        pass
+
+    def processcode(self, frag):
+        pass
+    
+    def isreserved(self, frag):
+        return frag in self.syntax['reserved']
+    
+    
+            
     
