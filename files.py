@@ -5,7 +5,10 @@ class Files(object):
     
     def __init__(self, tree):
         self.rootpath = tree['sourceroot']
-    
+
+    def exists(self, pathname, releaseid):
+        return os.path.exists(self.toreal(pathname, releaseid))
+        
     def getdir(self, pathname, releaseid):
         dirs, files = [], []
         realpath = self.toreal(pathname, releaseid)
@@ -62,8 +65,6 @@ class Files(object):
         return 'bin'
         
         
-        
-
     def istext(self, pathname, releaseid):
         filename = self.toreal(pathname, releaseid)
         s = open(filename).read(512)
