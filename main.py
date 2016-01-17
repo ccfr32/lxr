@@ -94,7 +94,10 @@ class MainHandler(tornado.web.RequestHandler):
                 i['name'] = file_name
                 i['class'] = 'dirfile'
                 i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
-                i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, file_name)
+                if self.reqfile != '/':
+                    i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, file_name)
+                else:
+                    i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], file_name)
                 i['img'] = '/icons/generic.gif'
                 i['filesize'] = '-'
                 i['modtime'] = '-'
