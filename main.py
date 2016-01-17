@@ -55,59 +55,62 @@ class MainHandler(tornado.web.RequestHandler):
         return """<a class="%s" href="%s#%s">%s<a>""" % (css, href, line, desc)
 
 
-    def _calc_source_content(self):
-        if self.files.isdir(self.reqfile, self.releaseid):
-            dirs, files = self.files.getdir(self.reqfile, self.releaseid)
-            if not dirs and not files:
-                return '''<p class="error">\n<i>The directory /%s does not exist, is empty or is hidden by an exclusion rule.</i>\n</p>\n''' % self.reqfile
-
-            res = []
-            _count = 0
-            if self.reqfile != '/':
-                i = {}
-                i['name'] = "../"
-                i['class'] = 'dirfolder'
-                i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
-                i['href'] = "/lxr/source/%s%s" % (self.tree['name'], os.path.dirname(self.reqfile))
-                i['img'] = '/icons/back.gif'
-                i['filesize'] = '-'
-                i['modtime'] = '-'
-                i['desc'] = ''
-                _count += 1
-                res.append(i)
+    def _calc_dir_content(self):
+        dirs, files = self.files.getdir(self.reqfile, self.releaseid)
+        if not dirs and not files:
+            return '''<p class="error">\n<i>The directory /%s does not exist, is empty or is hidden by an exclusion rule.</i>\n</p>\n''' % self.reqfile
+        
+        res = []
+        _count = 0
+        if self.reqfile != '/':
+            i = {}
+            i['name'] = "../"
+            i['class'] = 'dirfolder'
+            i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
+            i['href'] = "/lxr/source/%s%s" % (self.tree['name'], os.path.dirname(self.reqfile))
+            i['img'] = '/icons/back.gif'
+            i['filesize'] = '-'
+            i['modtime'] = '-'
+            i['desc'] = ''
+            _count += 1
+            res.append(i)
             
 
-            for dir_name in dirs:
-                i = {}
-                i['name'] = dir_name + "/"
-                i['class'] = 'dirfolder'
-                i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
-                i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], dir_name)
-                i['img'] = '/icons/folder.gif'
-                i['filesize'] = '-'
-                i['modtime'] = '-'
-                i['desc'] = ''
-                _count += 1
-                res.append(i)
-            for file_name in files:
-                i = {}
-                i['name'] = file_name
-                i['class'] = 'dirfile'
-                i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
-                if self.reqfile != '/':
-                    i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, file_name)
-                else:
-                    i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], file_name)
-                i['img'] = '/icons/generic.gif'
-                i['filesize'] = '-'
-                i['modtime'] = '-'
-                i['desc'] = ''
-                _count += 1
-                res.append(i)
-            loader = template.Loader(self.settings['template_path'])
-            html = loader.load('htmldir.html').generate(files=res, desc='')
-            return html
+        for dir_name in dirs:
+            i = {}
+            i['name'] = dir_name + "/"
+            i['class'] = 'dirfolder'
+            i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
+            i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], dir_name)
+            i['img'] = '/icons/folder.gif'
+            i['filesize'] = '-'
+            i['modtime'] = '-'
+            i['desc'] = ''
+            _count += 1
+            res.append(i)
+        for file_name in files:
+            i = {}
+            i['name'] = file_name
+            i['class'] = 'dirfile'
+            i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
+            if self.reqfile != '/':
+                i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, file_name)
+            else:
+                i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], file_name)
+            i['img'] = '/icons/generic.gif'
+            i['filesize'] = '-'
+            i['modtime'] = '-'
+            i['desc'] = ''
+            _count += 1
+            res.append(i)
+        loader = template.Loader(self.settings['template_path'])
+        html = loader.load('htmldir.html').generate(files=res, desc='')
+        return html
 
+    def _calc_code_file(self):
+        return self._calc_raw_file()
+    
+    def _calc_raw_file(self):
         html = '''<pre class="filecontent">'''
         fp = self.files.getfp(self.reqfile, self.releaseid)
         lineno = 0
@@ -117,7 +120,15 @@ class MainHandler(tornado.web.RequestHandler):
         fp.close()
         html += '''</pre>'''
         return html
+
     
+    def _calc_source_content(self):
+        if self.files.isdir(self.reqfile, self.releaseid):
+            return self._calc_dir_content()
+        elif self.files.parseable(self.reqfile, self.releaseid):
+            return self._calc_code_file()
+        else:
+            return self._calc_raw_file()
 
     def return_source_page(self):
         self.detail['source_content'] = self._calc_source_content()

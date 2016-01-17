@@ -65,7 +65,14 @@ class Files(object):
             return 'text'
         return 'bin'
         
-        
+
+    def parseable(self, pathname, releaseid):
+        ftype = self.gettype(pathname, releaseid)
+        if ftype == 'python':
+            return True
+        return False
+    
+    
     def istext(self, pathname, releaseid):
         filename = self.toreal(pathname, releaseid)
         s = open(filename).read(512)

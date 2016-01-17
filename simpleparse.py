@@ -1,72 +1,61 @@
 #!/usr/bin/env python
 
+from conf import syntaxs
+import re
 class SimpleParse(object):
+    
+    def __init__(self, buf, lang):
+        self.pos = 0
+        self.buf = buf
+        self.start = 0
+        self.end = 0
+        self.maxchar = len(buf)
+        
 
-    def __init__(self, fp, tabhint, syntax_spec):
         self.frags = []
-        self.next = None
+        self.in_commnet = False
+        self.in_string = False
+        self.in_include = False
+        self.lang = lang
+        self.open_re = re.compile("|".join(['(%s)' % spec['open'] for spec in lang['spec']]), re.M)
+        self.parse()
+
+        _result = ''.join([i[1] for i in self.frags])
+        assert _result == buf
+
         
-        self.bodyid = []
-        self.open = []
-        self.term = []
-        self.stay = []
-        self.continue = None
-        
-        for k in syntax_spec:
-            v = syntax_spec[k]
-            if v == 'atom':
-            self.bodyid.append(k)
-            self.open.append(k[0])
-            self.term.append(k[1])
-            self.stay.append(k[2])
-        
-        self.fp = fp
-        self.tabwidth = tabhint // 8;
+    def parse(self):
+        while self.pos < self.maxchar:
+            match = self.open_re.search(self.buf, self.pos, self.maxchar)
+            if match:
+                left, right = match.start(), match.end()
+                
+                if self.pos < left:
+                    frag = self.buf[self.pos:left]
+                    self.frags.append(('code', frag))
 
-                self.split = ''
-        self.open = ''
+                frag = self.buf[left:right]
+                self.frags.append(('string', frag))
 
-
-        for i in self.open:
-            self.open += "(%s)|" % i
-            self.split += "%s|" % i
-        self.open = self.open[:-1]
-        self.open = "^[\xFF\n]*(?:%s)$" % self.open
-        self.split = self.split[:-1]
-
-
-    def nextfrag(self):
-
-        btype = None
-        frag = None
-        term = None
-
-        change = self.split
-        stay = self.continue
-
-        line = None
-        opos = None
-        spos = None
-        
-        while(True):
-
-            if self.frags:
-                self.next = self.frags.pop(0)
-
-            if not self.next:
-                line = self.fp.readline()
-                if not line:
-                    break
-                self.next = '\xFF' + line
-
-            if self.frag and not re.match(r"['\xff\n']*", self.frag):
-                # not just newlines
-                pass
+                self.pos = right
             else:
-                if self.next 
-                
-        if btype:
-            btype = self.bodyid[btype]
-        frag = None
-                
+                frag = self.buf[self.pos:]
+                self.frags.append(('code', frag))
+
+                self.pos = self.maxchar
+        
+
+if __name__ == "__main__":
+    #fp = open("/Users/yahuayan/work/github/lxr/data/source/redis-py/2.4/tests/lock.py")
+    fp = open("/tmp/t.py")
+    buf = fp.read()
+    lang = syntaxs['python']
+    parse = SimpleParse(buf, lang)
+
+    
+        
+        
+
+
+            
             

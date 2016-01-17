@@ -162,16 +162,15 @@ def get_python_syntax():
         'identdef': '[a-zA-Z]\w+',
         'reserved' : '''and  as  assert break class continue def  del elif else  except exec  False finally for from global if  import in  is lambda None not or pass print raise return self True try while with yield''',
         'spec': [
-            {'comment': ['#', '\n']},
-            {'string': [ '"""', '"""', '\\\\.' ] },
-            {'string': [ "'''", "'''", "\\\\." ] },
-            {'string': ['"', '"', '\\\\.']},
-            {'string': ["'", "'", "\\\\."]},
-            {'include': ['\bimport\b', '\n']},
-            {'include': ['\bfrom\b', '\n']}],
+            {'open': '#', 'close': '\n', 'type': 'comment'},
+            {'open': '"""', 'close': '"""', 'type': 'string'},
+            {'open': "'''", 'close': "'''", 'type': 'string'},
+            {'open': '"', 'close': '"', 'type': 'string'},
+            {'open': "'", 'close': "'", 'type': 'string'},
+            {'open': "\\bimport\\b", 'close': '\n', 'type': 'include'},
+            {'open': "\\bfrom\\b", 'close': '\n', 'type': 'include'}
+        ],
         
-        # Include rules implemented in Python.pm to cope with an
-        # endlessly looping case under 'include' patterns.
         'typemap': {
             'c': 'class',
             'f': 'function',
