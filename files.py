@@ -6,15 +6,15 @@ class Files(object):
     def __init__(self, tree):
         self.rootpath = tree['sourceroot']
 
+        
     def exists(self, pathname, releaseid):
         return os.path.exists(self.toreal(pathname, releaseid))
-        
+    
     def getdir(self, pathname, releaseid):
         dirs, files = [], []
         realpath = self.toreal(pathname, releaseid)
         for i in os.listdir(realpath):
-            j = self.toreal(
-                os.path.join(pathname, i), releaseid)
+            j = os.path.join(realpath, i)
             if os.path.isdir(j):
                 dirs.append(i)
             elif os.path.isfile(j):
@@ -26,6 +26,7 @@ class Files(object):
 
     def isdir(self, pathname, releaseid):
         real = self.toreal(pathname, releaseid)
+        print real
         return os.path.isdir(real)
 
     def isfile(self, pathname, releaseid):
@@ -88,8 +89,11 @@ class Files(object):
         
     
     def toreal(self, pathname, releaseid):
+        if pathname.startswith("/"):
+            pathname = pathname[1:]
         return os.path.abspath(os.path.join(
             self.rootpath, releaseid, pathname))
+
     
     def filerev(self, pathname, releaseid):
         return "-".join([str(self.getsize(pathname, releaseid)),

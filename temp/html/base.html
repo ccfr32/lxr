@@ -19,8 +19,8 @@
     <tr>
       <td class="treelink" colspan="3">
 	Available trees: &nbsp;&nbsp;&nbsp;
-	{% for tree in trees %}
-	{% if current_tree == tree['name'] %}
+	{% for i in trees %}
+	{% if tree == i %}
 	&nbsp;<span class="tree-sel">{{tree['name']}}</span>&nbsp;
 	{% else %}
 	&nbsp;<a class="treelink" href="/lxr/search/{{tree['name']}}">{{tree['name']}}</a>&nbsp;	
@@ -34,22 +34,22 @@
       </td>
       <td>
 	<table class="header">
-	  <tr><td><h1 class="main">{{current_tree}}</h1></td></tr>
-	  <tr><td class="banner"></td></tr>
+	  <tr><td><h1 class="main">{{tree['name']}}</h1></td></tr>
+	  <tr><td class="banner">{{reqfile or '/'}}</td></tr>
 	</table>
       </td>
       <td class="rightmost">
-	{% for page in ["source", "ident", "search"] %}
-	{% if current_page != page %}
-	<form method="get" class="modes" action="/lxr/{{page}}/{{current_tree}}">
+	{% for i in ["source", "ident", "search"] %}
+	{% if page != i %}
+	<form method="get" class="modes" action="/lxr/{{i}}/{{tree['name']}}">
 	  <div class="compact">
-	    <button type="submit" >{{pages[page]}}</button>
+	    <button type="submit" >{{pages[i]}}</button>
 	  </div>
 	</form>
 	{% else %}
-	<form method="get" class="modes-sel" action="/lxr/{{page}}/{{current_tree}}">
+	<form method="get" class="modes-sel" action="/lxr/{{i}}/{{tree['name']}}">
 	  <div class="compact">
-	    <button type="submit" disabled>{{pages[page]}}</button>
+	    <button type="submit" disabled>{{pages[i]}}</button>
 	  </div>
 	</form>
 	{% end %}
@@ -60,7 +60,7 @@
     <tr>
       <td>&nbsp;</td>
       <td colspan='2' class="rightmost">
-	<form method="get" class="vars" action="/lxr/search/{{current_tree}}">
+	<form method="get" class="vars" action="/lxr/search/{{tree['name']}}">
 	  <p class="compact">
 	    &nbsp;<label>Version:
 	      <select name="!v">
@@ -84,11 +84,11 @@
 <hr>
 <table class="footer">
 <tr>
-  {% for page in ["source", "ident", "search"] %}
-  {% if current_page != page %}
-  <td>[&nbsp;<a class="modes" href="/lxr/{{page}}/{{current_tree}}">{{pages[page]}}</a>&nbsp;]</td>
+  {% for i in ["source", "ident", "search"] %}
+  {% if page != i %}
+  <td>[&nbsp;<a class="modes" href="/lxr/{{i}}/{{tree['name']}}">{{pages[i]}}</a>&nbsp;]</td>
   {% else %}
-  <td>[&nbsp;<span class="modes-sel">{{pages[page]}}</span>&nbsp;]</td>
+  <td>[&nbsp;<span class="modes-sel">{{pages[i]}}</span>&nbsp;]</td>
   {% end %}
   {% end %}
 </tr>

@@ -24,8 +24,8 @@
   <tbody>
     {% for fi in files %}
     <tr class="{{fi['dirclass']}}">
-      <td class="diricon">{{fi["iconlink"]}}</td>
-      <td class="dirname">{{fi["namelink"]}}</td>
+      <td class="diricon"><a class='' href="{{fi['href']}}"><img src="{{fi['img']}}" alt="folder"></a></td>
+      <td class="dirname"><a class="{{fi['class']}}" href="{{fi['href']}}">{{fi["name"]}}</a></td>
       <td class="dirsize">{{fi["filesize"]}}</td>
       <td class="dirtime">{{fi["modtime"]}}</td>
       <td class="dirdesc">{{fi["desc"]}}</td>
