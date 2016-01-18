@@ -13,6 +13,7 @@ from tornado.options import define, options, parse_command_line
 from tornado import template
 
 from files import Files
+from simpleparse import PythonParse
 import conf
 define("port", default=8888, help="run on the given port", type=int)
 
@@ -108,6 +109,12 @@ class MainHandler(tornado.web.RequestHandler):
         return html
 
     def _calc_code_file(self):
+        if self.reqfile.lower().endswith(".py"):
+            fp = self.files.getfp(self.reqfile, self.releaseid)
+            buf = fp.read()
+            fp.close()
+            parse = PythonParse(buf)
+            return parse.out()
         return self._calc_raw_file()
     
     def _calc_raw_file(self):

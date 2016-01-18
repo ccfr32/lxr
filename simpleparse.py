@@ -19,26 +19,47 @@ class SimpleParse(object):
 
     def get_line_html(self, line, width=4):
         line = '%04d' % line
-        html = '''<a class='fline' name="%s">%s</a>''' % line
+        html = '''<a class='fline' name="%s">%s</a> ''' % (line, line)
         return html
+
+
+    def _multilinetwist(self, frag, css):
+        ss = '''<span class="%s">%s</span>''' % (css, frag)
+        ss = ss.replace("\n", '</span>\n<span class="%s">' % css)
+        ss = ss.replace('<span class="%s"></span>' % css, '')
+        return ss
     
+
     def out(self):
-        htmls = ['<pre class="filecontent">']
-        
+        head = '<pre class="filecontent">'
+        tail = '</pre>'
+
+        htmls = []
         for fragtype, frag in self.frags:
             if fragtype == 'comment':
-                htmls.append('')
+                htmls.append(self._multilinetwist(frag, fragtype))
             elif fragtype == 'string':
-                htmls.append('')
+                htmls.append(self._multilinetwist(frag, fragtype))
             elif fragtype == 'include':
-                htmls.append('')
+                htmls.append(self._multilinetwist(frag, fragtype))
             elif fragtype == 'code':
-                htmls.append('')
+                htmls.append(self._multilinetwist(frag, fragtype))
             else:
-                htmls.append('')
-        htmls.append('</pre>')
+                htmls.append(self._multilinetwist(frag, 'code'))
+        tt = ''.join(htmls).split("\n")
+        linewidth = max(len(str(len(tt))), 4)
+        
+        line = 1
+        htmls = [self.get_line_html(line, linewidth)]
+        for i in tt:
+            htmls.append(i)
+            htmls.append('\n')
+            line += 1
+            htmls.append(self.get_line_html(line, linewidth))
+        htmls.insert(0, head)
+        htmls.append(tail)
         return ''.join(htmls)
-    
+        
     
 
 class PythonParse(SimpleParse):
