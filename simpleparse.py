@@ -30,6 +30,39 @@ class SimpleParse(object):
         return ss
     
 
+
+    def get_ident_link(self, ident):
+        if self.is_reserved(ident):
+            html = '''<a class='fid' href="/lxr/ident/redispy?_i=%s">%s</a>''' % (ident, ident)
+            return html
+        return ident
+
+    def get_reserved_link(self, word):
+        if self.is_reserved(word):
+            return '<span class="reserved">%s</span>' % word
+        return word
+
+    def is_ident(self, word):
+        return False
+    
+    def is_reserved(self, word):
+        return word in self.reserved
+    
+    def _parse_code(self, frag):
+        ss = self.identdef.split(frag)
+        kk = []
+        for i in ss:
+            if not i:
+                continue
+            if self.is_reserved(i):
+                kk.append(self.get_reserved_link(i))
+            elif self.is_ident(i):
+                kk.append(self.get_ident_link(i))
+            else:
+                kk.append(i)
+        return ''.join(kk)
+
+    
     def out(self):
         head = '<pre class="filecontent">'
         tail = '</pre>'
@@ -43,9 +76,9 @@ class SimpleParse(object):
             elif fragtype == 'include':
                 htmls.append(self._multilinetwist(frag, fragtype))
             elif fragtype == 'code':
-                htmls.append(self._multilinetwist(frag, fragtype))
+                htmls.append(self._parse_code(frag))
             else:
-                htmls.append(self._multilinetwist(frag, 'code'))
+                htmls.append(self._parse_code(frag))
         tt = ''.join(htmls).split("\n")
         linewidth = max(len(str(len(tt))), 4)
         
@@ -65,7 +98,7 @@ class SimpleParse(object):
 class PythonParse(SimpleParse):
 
     langid = 27
-    identdef = '[a-zA-Z]\w+'
+    identdef = re.compile('([a-zA-Z]\w+)', re.M)
     reserved = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',
                 'del', 'elif', 'else', 'except', 'exec', 'False', 'finally', 'for',
                 'from', 'global', 'if', 'import', 'in', 'is', 'lambda', 'None', 'not',
