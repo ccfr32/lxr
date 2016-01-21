@@ -113,7 +113,8 @@ class MainHandler(tornado.web.RequestHandler):
             fp = self.files.getfp(self.reqfile, self.releaseid)
             buf = fp.read()
             fp.close()
-            parse = PythonParse(buf)
+            parse = PythonParse(conf.config, self.tree)
+            parse.parse(buf)
             return parse.out()
         return self._calc_raw_file()
     

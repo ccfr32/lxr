@@ -22,7 +22,7 @@ class Index(object):
         self.files = {}
         self.symcache = {}
         self.cntcache = {}
-
+        self.total_sym = 0
 
         self.allfiles_select = "select f.fileid, f.filename, f.revision, t.relcount" \
                                " from lxr_files f, lxr_status t"\
@@ -32,11 +32,7 @@ class Index(object):
                                '  and  t.fileid = r.fileid'\
                                ' order by f.filename, f.revision'\
 
-        self.symbols_insert = "insert into lxr_symbols (symname, symid, symcount)"\
-                              ' values (?, ?, 0)'
 
-        self.symbols_byname = "select symid, symcount from lxr_symbols"\
-                              ' where symname = ?'
 
         self.symbols_byid = "select symname from lxr_symbols"\
                             ' where symid = ?'
@@ -146,18 +142,6 @@ class Index(object):
                               + ' )'
                               )
 
-        self.langtypes_insert = ("insert into lxr_langtypes"
-                                 + ' (typeid, langid, declaration)'
-                                 + ' values (?, ?, ?)'
-                                 )
-
-        self.langtypes_select = ("select typeid from lxr_langtypes"
-                                 + ' where langid = ?'
-                                 + ' and declaration = ?'
-                                 )
-
-        self.langtypes_count = ("select count(*) from lxr_langtypes"
-                                )
 
         self.purge_all = ("truncate table lxr_definitions"
                           + ", lxr_usages, lxr_langtypes"
@@ -451,13 +435,11 @@ class Index(object):
         elif status & 1 == 0:
             self.status_update(fileid, status ^ 1)
             
-
     def filereferenced(self, fileid):
         status = self.status_select(fileid)
         if status is not None and status & 1:
             return True
         return False
-
 
     def setfilereferenced(self, fileid):
         status = self.status_select(fileid)
@@ -466,26 +448,74 @@ class Index(object):
         elif status & 1 == 0:
             self.status_update(fileid, status ^ 2)
 
-
     def symbols_byname(self, symname):
-        return 0, 0
-            
-    def symid(self, symname):
-        if symname in self.symcache:
-            return self.symcache
+        sql = '''select symid, symcount from %s_symbols where symname = "%s"''' % (self.table_prifix, symname)
+        self.cur.execute(sql)
+        ss = [(row[0], row[1]) for row in self.cur.fetchall()]
+        if ss:
+            return ss[0]
         
-        pass
+        return None, 0
 
+    def symbols_insert(self, symname, symid):
+        sql = "insert into %s_symbols (symname, symid, symcount) values ('%s', %s, 0)" % (self.table_prifix, symname, symid)
+        self.cur.execute(sql)
+        
+
+    
+    def symid(self, symname):
+        if not symname:
+            return None
+        
+        symid, symcount = self.symbols_byname(symname)
+        if symid is None:
+            sid = self.total_sym
+            self.total_sym += 1
+            self.symbols_insert(symname, sid)
+            return sid
+        return symid
+    
     def setsymdeclaration(self, symname, fileid, line_no, langid, typeid, relsym):
         sid = self.symid(symname)
-        relid = self.symid(relsym) or None
-        sql = '''insert into %s_definitions
-        symid, fileid, line, langid, typeid, relid
-        values (%s, %s, %s, %s, %s, %s)
-        ''' % (self.table_prifix, sid, fileid, line_no, langid, typeid, relid)
-        return self.cur.execute(sql)
+        relid = self.symid(relsym)
+        sql = '''insert into %s_definitions (`symid`, `fileid`,`line`,`langid`,`typeid`,`relid`)  values (%%s, %%s, %%s, %%s, %%s, %%s)''' % (self.table_prifix)
+
+        args = (sid, fileid, line_no, langid, typeid, relid)
+        return self.cur.execute(sql, args)
         
-            
+    def issymbol(self, symname, releaseid):
+        symid, symcount = self.symbols_byname(symname)
+        if symid:
+            return True
+        return False
+    
+
+    def langtypes_insert(self, typeid, langid, declaration):
+        sql = """insert into %s_langtypes(typeid, langid, declaration) 
+        values (%s, %s, '%s')""" % (self.table_prifix, typeid, langid, declaration)
+        print sql
+        return self.cur.execute(sql)
+    
+        
+    def langtypes_select(self, langid, declaration):
+        sql = '''select typeid from %s_langtypes 
+        where langid = %s and declaration = "%s"''' % (self.table_prifix, langid, declaration)
+        self.cur.execute(sql)
+        ss = [row[0] for row in self.cur.fetchall()]
+        if ss:
+            return ss[0]
+        return -1
+
+    def langtypes_count(self):
+        sql = "select max(typeid) + 1 from %s_langtypes" % (self.table_prifix)
+        self.cur.execute(sql)
+        ss = [row[0] for row in self.cur.fetchall()]
+        if not ss[0]:
+            self.total_sym += 1
+            return self.total_sym
+        return ss[0]
+
+
     def flushcache(self):
         pass
     

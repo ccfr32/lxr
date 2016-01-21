@@ -2,7 +2,7 @@
 
 import sys
 import re
-
+from index import Index
 def find_escape_char(s, right, left):
     c = 0
     while right > left:
@@ -32,10 +32,8 @@ class SimpleParse(object):
 
 
     def get_ident_link(self, ident):
-        if self.is_reserved(ident):
-            html = '''<a class='fid' href="/lxr/ident/redispy?_i=%s">%s</a>''' % (ident, ident)
-            return html
-        return ident
+        html = '''<a class='fid' href="/lxr/ident/redispy?_i=%s">%s</a>''' % (ident, ident)
+        return html
 
     def get_reserved_link(self, word):
         if self.is_reserved(word):
@@ -43,6 +41,10 @@ class SimpleParse(object):
         return word
 
     def is_ident(self, word):
+        symid, symcount = self.index.symbols_byname(word)
+        print word, symid, symcount
+        if symid is not None:
+            return True
         return False
     
     def is_reserved(self, word):
@@ -122,23 +124,32 @@ class PythonParse(SimpleParse):
         'v': 'variable'
     }
     
-    def __init__(self, buf):
+    def __init__(self, config, tree):
+        self.config = config
+        self.tree = tree
+        self.index = Index(config, tree)
+        self.buf = []
         self.pos = 0
+        self.start = 0
+        self.end = 0
+        self.maxchar = 0
+
+        self.frags = []
+        
+        self.open_re = re.compile("|".join(['(%s)' % i['open'] for i in self.spec]), re.M)
+
+        
+    def parse(self, buf):
         self.buf = buf
+        self.pos = 0
         self.start = 0
         self.end = 0
         self.maxchar = len(buf)
 
         self.frags = []
         
-        self.open_re = re.compile("|".join(['(%s)' % i['open'] for i in self.spec]), re.M)
-        self.parse()
-
-        _result = ''.join([i[1] for i in self.frags])
-        assert _result == buf
 
         
-    def parse(self):
         while self.pos < self.maxchar:
             open_match = self.open_re.search(self.buf, self.pos, self.maxchar)
             if open_match:
@@ -179,16 +190,21 @@ class PythonParse(SimpleParse):
                 frag = self.buf[self.pos:]
                 self.frags.append(('code', frag))
                 self.pos = self.maxchar
-        
+    
+        _result = ''.join([i[1] for i in self.frags])
+        assert _result == buf
+
 
                 
 if __name__ == "__main__":
+    from conf import config, trees
     for filename in sys.argv[1:]:
         print filename
         fp = open(filename)
         buf = fp.read()
         fp.close()
-        parse = PythonParse(buf)
+        parse = PythonParse(config, trees['redispy'])
+        parse.parse(buf)
 
     
         

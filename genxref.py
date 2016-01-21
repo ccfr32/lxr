@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import subprocess
 
@@ -17,7 +18,6 @@ class Genxref(object):
         self.index = Index(config, tree)
         self.gensearch(self.default_releaseid)
         self.dfs_process_file('.', self.default_releaseid)
-     
         
         #self.dfs_process_refs('.', self.default_releaseid)
 
@@ -59,7 +59,6 @@ class Genxref(object):
 
 
     def _processfile(self, pathname, releaseid):
-        print 'processfile: %s' % self.files.toreal(pathname, releaseid)
         revision = self.files.filerev(pathname, releaseid)
         fileid = self.index.fileid(pathname, revision)
         #self.index.setfilerelease(fileid, releaseid)
@@ -93,12 +92,18 @@ class Genxref(object):
 
             
     def dfs_process_file(self, pathname, releaseid):
+
         if self.files.isdir(pathname, releaseid):
             dirs, files = self.files.getdir(pathname, releaseid)
             for i in dirs + files:
                 self.dfs_process_file(os.path.join(pathname, i), releaseid)
-        elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
-            self._processfile(pathname, releaseid)
+        else:
+            _realfile = self.files.toreal(pathname, releaseid)
+            if _realfile in self.filestype:
+                if self.filestype[_realfile] == 'python':
+                    self._processfile(pathname, releaseid)
+            else:
+                pass
                 
             
     def dfs_process_refs(self, pathname, releaseid):
