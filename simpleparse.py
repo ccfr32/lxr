@@ -89,7 +89,6 @@ class SimpleParse(object):
             if self.is_reserved(i):
                 kk.append(self.get_reserved_link(i))
             elif self._is_package(i) and self.filename and self.release_id:
-                print i, 'is package'
                 if self.filename.startswith(".."):
                     _dir = os.path.join(os.path.dirname(self.filename), '..')
                 elif self.filename.startswith("."):
