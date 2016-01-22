@@ -119,6 +119,6 @@ class Genxref(object):
 if __name__ == "__main__":
     from conf import config, trees
 
-    tree = trees['redispy']
+    tree = trees['sqlalchemy']
     g = Genxref(config, tree)
 

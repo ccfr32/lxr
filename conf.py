@@ -38,7 +38,15 @@ trees = {
         'all_versions': ['2.4'],
         'default_version': '2.4',
         'dbname': 'dbi:mysql:dbname=lxr_redispy'
-    }
+    },
+    
+    'sqlalchemy': {
+        'name': 'sqlalchemy',
+        'desc': 'sqlalchemy',
+        'sourceroot': os.path.join(source_root, 'sqlalchemy'),
+        'all_versions': ['0.9.7'],
+        'default_version': '0.9.7',
+    },    
 }
 
 

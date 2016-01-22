@@ -26,7 +26,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.reqfile = None
         self.tree = None
         self.files = None
-        self.releaseid = '2.4'
+        self.releaseid = ''
         self.detail = {}
         self.detail['trees'] = self.get_all_trees()
         self.detail['pages'] = {
@@ -82,7 +82,10 @@ class MainHandler(tornado.web.RequestHandler):
             i['name'] = dir_name + "/"
             i['class'] = 'dirfolder'
             i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
-            i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], dir_name)
+            if self.reqfile and self.reqfile != '/':
+                i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, dir_name)
+            else:
+                i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], dir_name)
             i['img'] = '/icons/folder.gif'
             i['filesize'] = '-'
             i['modtime'] = '-'
@@ -154,6 +157,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self, *args):
         self.page = args[0]
         self.tree = conf.trees.get(args[1])
+        self.releaseid = self.tree['default_version']
         self.files = Files(conf.trees.get(args[1]))
         if len(args) >= 3:
             self.reqfile = args[2] or '/'

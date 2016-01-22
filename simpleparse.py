@@ -7,6 +7,8 @@ import string
 
 from index import Index
 from files import Files
+
+
 def find_escape_char(s, right, left):
     c = 0
     while right > left:
@@ -79,6 +81,7 @@ class SimpleParse(object):
     def _is_package(self, word):
         return word != 'from' and word != 'import' and (word[0] == '.' or word[0] in string.letters)
     
+
     def _parse_include(self, frag):
         ss = self.blankre.split(frag)
         kk = []
@@ -89,9 +92,9 @@ class SimpleParse(object):
             if self.is_reserved(i):
                 kk.append(self.get_reserved_link(i))
             elif self._is_package(i) and self.filename and self.release_id:
-                if self.filename.startswith(".."):
+                if i.startswith(".."):
                     _dir = os.path.join(os.path.dirname(self.filename), '..')
-                elif self.filename.startswith("."):
+                elif i.startswith("."):
                     _dir = os.path.dirname(self.filename)
                 else:
                     _dir = '/'

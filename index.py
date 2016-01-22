@@ -524,5 +524,5 @@ if __name__ == "__main__":
     from conf import trees
     from conf import config
 
-    tree = trees['redispy']
+    tree = trees['sqlalchemy']
     index = Index(config, tree, True)
