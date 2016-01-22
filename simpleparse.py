@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import re
+import string
+
 from index import Index
+from files import Files
 def find_escape_char(s, right, left):
     c = 0
     while right > left:
@@ -30,26 +34,33 @@ class SimpleParse(object):
         return ss
     
 
-
-    def get_ident_link(self, ident):
-        html = '''<a class='fid' href="/lxr/ident/redispy?_i=%s">%s</a>''' % (ident, ident)
+    def get_include_link(self, word, path):
+        html = '''<a class='include' href="/lxr/source/%s%s">%s</a>''' % (self.tree['name'], path, word)
         return html
 
+
+    def get_ident_link(self, ident):
+        html = '''<a class='fid' href="/lxr/ident/%s?_i=%s">%s</a>''' % (self.tree['name'], ident, ident)
+        return html
+
+    
     def get_reserved_link(self, word):
         if self.is_reserved(word):
             return '<span class="reserved">%s</span>' % word
         return word
 
+
     def is_ident(self, word):
         symid, symcount = self.index.symbols_byname(word)
-        print word, symid, symcount
         if symid is not None:
             return True
         return False
     
+
     def is_reserved(self, word):
         return word in self.reserved
     
+
     def _parse_code(self, frag):
         ss = self.identdef.split(frag)
         kk = []
@@ -64,6 +75,51 @@ class SimpleParse(object):
                 kk.append(i)
         return ''.join(kk)
 
+
+    def _is_package(self, word):
+        return word != 'from' and word != 'import' and (word[0] == '.' or word[0] in string.letters)
+    
+    def _parse_include(self, frag):
+        ss = self.blankre.split(frag)
+        kk = []
+
+        for i in ss:
+            if not i:
+                continue
+            if self.is_reserved(i):
+                kk.append(self.get_reserved_link(i))
+            elif self._is_package(i) and self.filename and self.release_id:
+                print i, 'is package'
+                if self.filename.startswith(".."):
+                    _dir = os.path.join(os.path.dirname(self.filename), '..')
+                elif self.filename.startswith("."):
+                    _dir = os.path.dirname(self.filename)
+                else:
+                    _dir = '/'
+                words = []
+                for j in i.split("."):
+                    words.append(j)
+                    words.append('.')
+                words.pop()
+                for j in words:
+                    if not j:
+                        continue
+                    if j == '.':
+                        kk.append(j)
+                    else:
+                        if self.files.isdir(os.path.join(_dir, j), self.release_id):
+                            kk.append(self.get_include_link(j, os.path.join(_dir, j)))
+                            _dir = os.path.join(_dir, j)
+                        elif self.files.exists(os.path.join(_dir, j + ".py"), self.release_id):
+                            kk.append(self.get_include_link(j, os.path.join(_dir, j + ".py")))
+                        else:
+                            kk.append(j)
+            elif self.is_ident(i):
+                kk.append(self.get_ident_link(i))
+            else:
+                kk.append(i)
+        return ''.join(kk)
+    
     
     def out(self):
         head = '<pre class="filecontent">'
@@ -76,7 +132,7 @@ class SimpleParse(object):
             elif fragtype == 'string':
                 htmls.append(self._multilinetwist(frag, fragtype))
             elif fragtype == 'include':
-                htmls.append(self._multilinetwist(frag, fragtype))
+                htmls.append(self._parse_include(frag))
             elif fragtype == 'code':
                 htmls.append(self._parse_code(frag))
             else:
@@ -100,6 +156,7 @@ class SimpleParse(object):
 class PythonParse(SimpleParse):
 
     langid = 27
+    blankre = re.compile('([a-zA-Z0-9_\.]+)')
     identdef = re.compile('([a-zA-Z]\w+)', re.M)
     reserved = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',
                 'del', 'elif', 'else', 'except', 'exec', 'False', 'finally', 'for',
@@ -127,7 +184,11 @@ class PythonParse(SimpleParse):
     def __init__(self, config, tree):
         self.config = config
         self.tree = tree
+        self.files = Files(tree)
         self.index = Index(config, tree)
+
+        self.filename = ''
+        self.release_id = ''
         self.buf = []
         self.pos = 0
         self.start = 0
@@ -139,7 +200,11 @@ class PythonParse(SimpleParse):
         self.open_re = re.compile("|".join(['(%s)' % i['open'] for i in self.spec]), re.M)
 
         
-    def parse(self, buf):
+    def parse(self, buf, filename='', release_id=''):
+        if filename and release_id:
+            self.filename = filename
+            self.release_id = release_id
+            
         self.buf = buf
         self.pos = 0
         self.start = 0
@@ -195,11 +260,16 @@ class PythonParse(SimpleParse):
         assert _result == buf
 
 
-                
+    def parse_file(self, filename, release_id):
+        fp = self.files.getfp(filename, release_id)
+        buf = fp.read()
+        fp.close()
+        self.parse(buf, filename, release_id)
+        
+        
 if __name__ == "__main__":
     from conf import config, trees
     for filename in sys.argv[1:]:
-        print filename
         fp = open(filename)
         buf = fp.read()
         fp.close()

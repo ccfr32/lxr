@@ -2,10 +2,12 @@ import os
 import string 
 
 class Files(object):
+    '''
+    `pathname` startswith '/xxxx/xxx.py'
+    '''
     
     def __init__(self, tree):
         self.rootpath = tree['sourceroot']
-
         
     def exists(self, pathname, releaseid):
         return os.path.exists(self.toreal(pathname, releaseid))
@@ -26,7 +28,6 @@ class Files(object):
 
     def isdir(self, pathname, releaseid):
         real = self.toreal(pathname, releaseid)
-        print real
         return os.path.isdir(real)
 
     def isfile(self, pathname, releaseid):
@@ -92,7 +93,6 @@ class Files(object):
         if float(len(t))/float(len(s)) > 0.30:
             return False
         return True
-        
         
     
     def toreal(self, pathname, releaseid):

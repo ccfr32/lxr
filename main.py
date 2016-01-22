@@ -110,11 +110,8 @@ class MainHandler(tornado.web.RequestHandler):
 
     def _calc_code_file(self):
         if self.reqfile.lower().endswith(".py"):
-            fp = self.files.getfp(self.reqfile, self.releaseid)
-            buf = fp.read()
-            fp.close()
             parse = PythonParse(conf.config, self.tree)
-            parse.parse(buf)
+            parse.parse_file(self.reqfile, self.releaseid)
             return parse.out()
         return self._calc_raw_file()
     
@@ -162,7 +159,6 @@ class MainHandler(tornado.web.RequestHandler):
             self.reqfile = args[2] or '/'
         else:
             self.reqfile = '/'
-        print self.reqfile
         self.detail['tree'] = self.tree
         self.detail['reqfile'] = self.reqfile
         self.detail['files'] = self.files
