@@ -140,6 +140,8 @@ class SimpleParse(object):
             else:
                 htmls.append(self._parse_code(frag))
         tt = ''.join(htmls).split("\n")
+        while tt and (tt[-1] == '' or tt[-1] == '\n'):
+            tt.pop()
         linewidth = max(len(str(len(tt))), 4)
         
         line = 1
