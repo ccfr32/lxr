@@ -21,9 +21,9 @@
 	Available trees: &nbsp;&nbsp;&nbsp;
 	{% for i in trees %}
 	{% if tree == i %}
-	&nbsp;<span class="tree-sel">{{tree['name']}}</span>&nbsp;
+	&nbsp;<span class="tree-sel">{{i['name']}}</span>&nbsp;
 	{% else %}
-	&nbsp;<a class="treelink" href="/lxr/search/{{tree['name']}}">{{tree['name']}}</a>&nbsp;	
+	&nbsp;<a class="treelink" href="/lxr/search/{{i['name']}}">{{i['name']}}</a>&nbsp;	
 	{% end %}
 	{% end %}
       </td>
