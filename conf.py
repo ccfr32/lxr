@@ -37,7 +37,6 @@ trees = {
         'sourceroot': os.path.join(source_root, 'redis-py'),
         'all_versions': ['2.4'],
         'default_version': '2.4',
-        'dbname': 'dbi:mysql:dbname=lxr_redispy'
     },
     
     'sqlalchemy': {

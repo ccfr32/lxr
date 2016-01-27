@@ -18,8 +18,7 @@ class Genxref(object):
         self.index = Index(config, tree)
         self.gensearch(self.default_releaseid)
         self.dfs_process_file('.', self.default_releaseid)
-        
-        #self.dfs_process_refs('.', self.default_releaseid)
+        self.dfs_process_refs('.', self.default_releaseid)
 
         
     def feedswish(self, pathname, releaseid, swish):
@@ -55,7 +54,6 @@ class Genxref(object):
         swish = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True)
         self.feedswish('.', releaseid, swish)
         out, err = swish.communicate()
-
 
 
     def _processfile(self, pathname, releaseid):
