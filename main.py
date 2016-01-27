@@ -15,6 +15,8 @@ from tornado import template
 from files import Files
 from simpleparse import PythonParse
 import conf
+from index import Index
+
 define("port", default=8888, help="run on the given port", type=int)
 
 class MainHandler(tornado.web.RequestHandler):
@@ -26,6 +28,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.reqfile = None
         self.tree = None
         self.files = None
+        self.index = None
         self.releaseid = ''
         self.detail = {}
         self.detail['trees'] = self.get_all_trees()
@@ -35,6 +38,7 @@ class MainHandler(tornado.web.RequestHandler):
             'search': 'General search'
         }
         
+
     def get_all_trees(self):
         return conf.trees.values()
 
@@ -42,18 +46,14 @@ class MainHandler(tornado.web.RequestHandler):
     def get_swish_search(self, search_text):
         return []
 
+
     def return_ident_page(self):
+        ident = self.get_argument('_i')
+        defs = self.index.symdeclarations(ident, self.releaseid)
+        self.detail['defs'] = defs
+        print defs
+        self.detail['refs'] = []
         self.render("ident.html", **self.detail)
-
-
-
-    def _fileref(self, desc, css, path, line=0, *args):
-        line = "%04d" % line
-        if path.startswith("/"):
-            href = "/lxr/source/%s%s" % (self.tree['name'], path)
-        else:
-            href = "/lxr/source/%s/%s" % (self.tree['name'], path)
-        return """<a class="%s" href="%s#%s">%s<a>""" % (css, href, line, desc)
 
 
     def _calc_dir_content(self):
@@ -65,7 +65,7 @@ class MainHandler(tornado.web.RequestHandler):
         _count = 0
         if self.reqfile != '/':
             i = {}
-            i['name'] = "../"
+            i['name'] = "Parent directory"
             i['class'] = 'dirfolder'
             i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
             i['href'] = "/lxr/source/%s%s" % (self.tree['name'], os.path.dirname(self.reqfile))
@@ -129,7 +129,6 @@ class MainHandler(tornado.web.RequestHandler):
         html += '''</pre>'''
         return html
 
-    
     def _calc_source_content(self):
         if self.files.isdir(self.reqfile, self.releaseid):
             return self._calc_dir_content()
@@ -159,6 +158,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.tree = conf.trees.get(args[1])
         self.releaseid = self.tree['default_version']
         self.files = Files(conf.trees.get(args[1]))
+        self.index= Index(conf.config, self.tree)
         if len(args) >= 3:
             self.reqfile = args[2] or '/'
         else:

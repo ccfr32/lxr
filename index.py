@@ -52,19 +52,6 @@ class Index(object):
                                )
 
 
-        self.definitions_select = ('select f.filename, d.line, l.declaration, d.relid'
-                                   + " from lxr_symbols s, lxr_definitions d"
-                                   + ", lxr_files f, lxr_releases r"
-                                   + ", lxr_langtypes l"
-                                   + ' where s.symname = ?'
-                                   + '  and  r.releaseid = ?'
-                                   + '  and  d.fileid = r.fileid'
-                                   + '  and  d.symid  = s.symid'
-                                   + '  and  d.langid = l.langid'
-                                   + '  and  d.typeid = l.typeid'
-                                   + '  and  f.fileid = r.fileid'
-                                   + ' order by f.filename, d.line, l.declaration'
-                                   )
 
         self.delete_file_definitions = ("delete from lxr_definitions"
                                         + ' where fileid  = ?'
@@ -461,6 +448,20 @@ class Index(object):
         sql = "insert into %s_symbols (symname, symid, symcount) values ('%s', %s, 0)" % (self.table_prifix, symname, symid)
         self.cur.execute(sql)
         
+    def symdeclarations(self, ident, releaseid):
+        sql = '''select f.filename, d.line, l.declaration, d.relid
+        from 
+        %s_symbols s, %s_definitions d, %s_files f, %s_releases r, %s_langtypes l
+        where s.symname = '%s' and  r.releaseid = '%s' and  d.fileid = r.fileid and  d.symid  = s.symid  and  d.langid = l.langid 
+        and  d.typeid = l.typeid and  f.fileid = r.fileid
+        order by f.filename, d.line, l.declaration''' % (self.table_prifix, self.table_prifix, self.table_prifix,
+                                                         self.table_prifix, self.table_prifix,
+                                                         ident, releaseid)
+        self.cur.execute(sql)
+        print sql
+        ss = [(row[0], row[1], row[2], row[3]) for row in self.cur.fetchall()]
+        return ss
+            
 
     
     def symid(self, symname):
