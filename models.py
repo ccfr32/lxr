@@ -316,12 +316,14 @@ class TreeQuery(BaseQuery):
     def get_treeid(self, name, version):
         rv = self.filter(Tree.name==name, Tree.version==version).first()
         if rv is None:
-            return None
+            rv = Tree(name, version)
+            db.session.add(rv)
+            db.session.commit()
         return rv.id
     
 
 class Tree(db.Model):
-    __tablename__ = 'lxr_tree'
+    __tablename__ = 'src_tree'
 
     query_class = TreeQuery
     
@@ -335,7 +337,7 @@ class Tree(db.Model):
         
     
 class Definitions(db.Model):
-    __tablename__ = 'lxr_definitions'
+    __tablename__ = 'src_definitions'
 
     id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
     symid = Column(Integer, nullable=False)
@@ -364,7 +366,7 @@ class LangTypeQuery(BaseQuery):
     
         
 class LangType(db.Model):
-    __tablename__ = 'lxr_langtype'
+    __tablename__ = 'src_langtype'
 
     query_class = LangTypeQuery
     
@@ -378,6 +380,9 @@ class LangType(db.Model):
 
 class SymbolQuery(BaseQuery):
 
+    def get_by_name(self, treeid, name):
+        return self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
+    
     def get_or_create(self, treeid, name):
         rv = self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
         if rv is None:
@@ -387,7 +392,7 @@ class SymbolQuery(BaseQuery):
         return rv
     
 class Symbol(db.Model):
-    __tablename__ = 'lxr_symbol'
+    __tablename__ = 'src_symbol'
 
     query_class = SymbolQuery
     
@@ -415,7 +420,7 @@ class FileQuery(BaseQuery):
 
     
 class File(db.Model):
-    __tablename__ = 'lxr_file'
+    __tablename__ = 'src_file'
 
     query_class = FileQuery
     
@@ -447,10 +452,12 @@ class File(db.Model):
         
         
 class Ref(db.Model):
-    __tablename__ = 'lxr_ref'
+    __tablename__ = 'src_ref'
 
-    symid = Column(Integer, nullable=False, primary_key=True)
-    fileid = Column(Integer, nullable=False, primary_key=True)
+    
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)    
+    symid = Column(Integer, nullable=False)
+    fileid = Column(Integer, nullable=False)
     line = Column(Integer, nullable=False)
 
     def __init__(self, symid, fileid, line):

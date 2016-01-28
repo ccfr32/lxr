@@ -5,9 +5,9 @@ import sys
 import re
 import string
 
-from index import Index
 from files import Files
 
+from models import Symbol, Tree
 
 def find_escape_char(s, right, left):
     c = 0
@@ -53,16 +53,28 @@ class SimpleParse(object):
 
 
     def is_ident(self, word):
-        symid, symcount = self.index.symbols_byname(word)
-        if symid is not None:
-            return True
-        return False
+        rv = Symbol.query.get_by_name(self.treeid, word)
+        return True if rv else False
     
 
     def is_reserved(self, word):
         return word in self.reserved
     
-
+    def get_idents(self, frag):
+        ss = self.identdef.split(frag)
+        kk = []
+        line = 0
+        for i in ss:
+            line += i.count('\n')
+            if not i:
+                continue
+            if self.is_reserved(i):
+                continue
+            if self.is_ident(i):
+                kk.append((i, line))
+        return kk
+                
+    
     def _parse_code(self, frag):
         ss = self.identdef.split(frag)
         kk = []
@@ -190,8 +202,7 @@ class PythonParse(SimpleParse):
         self.config = config
         self.tree = tree
         self.files = Files(tree)
-        self.index = Index(config, tree)
-
+        self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
         self.filename = ''
         self.release_id = ''
         self.buf = []

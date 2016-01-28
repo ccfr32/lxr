@@ -8,7 +8,7 @@ from files import Files
 from index import Index
 from lang import Lang
 from simpleparse import PythonParse
-from models import db, Tree, File, Symbol, LangType, Definitions
+from models import db, Tree, File, Symbol, LangType, Definitions, Ref
 from ctags import ctags
 
 class Genxref(object):
@@ -19,11 +19,7 @@ class Genxref(object):
         self.tree = tree
         self.version = tree['version']
         self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
-        if self.treeid is None:
-            o = Tree(tree['name'], tree['version'])
-            db.session.add(o)
-            db.session.commit()
-            self.treeid = o.id
+
             
         self.config = config
         self.parse = PythonParse(config, tree)
@@ -117,12 +113,21 @@ class Genxref(object):
         else:
             _realfile = self.files.toreal(pathname, version)
             if _realfile in self.filestype:
+                if self.filestype[_realfile] != 'python':
+                    return
                 o = File.query.get_or_create(self.treeid, pathname)
                 if not o.has_refered():
-                    #tags = ctags(abspath, lang)
+                    _fp = open(_realfile)
+                    _buf = _fp.read()
+                    _fp.close()
+                    words = self.parse.get_idents(_buf)
+                    for word, line in words:
+                        symbol_obj = Symbol.query.get_or_create(self.treeid, word)
+                        ref = Ref(symbol_obj.symid, o.fileid, line)
+                        db.session.add(ref)
                     o.set_refered()
                     db.session.add(o)
-                    db.session.commit()
+            db.session.commit()
 
                     
 if __name__ == "__main__":
