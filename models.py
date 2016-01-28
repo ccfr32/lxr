@@ -26,6 +26,8 @@ from sqlalchemy.util import to_list
 
 from signals import Namespace
 
+from cache import cached
+
 _camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
 
 _signals = Namespace()
@@ -313,6 +315,7 @@ db = SQLAlchemy(DBURI)
         
 class TreeQuery(BaseQuery):
 
+    @cached
     def get_treeid(self, name, version):
         rv = self.filter(Tree.name==name, Tree.version==version).first()
         if rv is None:
@@ -356,7 +359,9 @@ class Definitions(db.Model):
 
 class LangTypeQuery(BaseQuery):
 
+    @cached
     def get_or_create(self, lang, desc):
+        print self, type(self), self.__class__.__name__
         rv = self.filter(LangType.lang == lang, LangType.desc == desc).first()
         if rv is None:
             rv = LangType(lang, desc)
@@ -378,11 +383,22 @@ class LangType(db.Model):
         self.lang = lang
         self.desc = desc
 
+
 class SymbolQuery(BaseQuery):
 
+    @cached
     def get_by_name(self, treeid, name):
         return self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
+
+    @cached
+    def get_symid(self, treeid, name):
+        rv = self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
+        if rv is None:
+            return None
+        return rv.symid
     
+
+    @cached
     def get_or_create(self, treeid, name):
         rv = self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
         if rv is None:
@@ -391,6 +407,7 @@ class SymbolQuery(BaseQuery):
             self.session.commit()
         return rv
     
+
 class Symbol(db.Model):
     __tablename__ = 'src_symbol'
 
@@ -410,6 +427,7 @@ class Symbol(db.Model):
 
 class FileQuery(BaseQuery):
 
+    @cached
     def get_or_create(self, treeid, filename):
         rv = self.filter(File.treeid==treeid, File.filename==filename).first()
         if rv is None:
@@ -464,6 +482,7 @@ class Ref(db.Model):
         self.symid = symid
         self.fileid = fileid
         self.line = line
+
 
 if __name__ == "__main__":
     db.drop_all()        

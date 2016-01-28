@@ -28,7 +28,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.reqfile = None
         self.tree = None
         self.files = None
-        self.index = None
+        self.tree_id = None
         self.releaseid = ''
         self.detail = {}
         self.detail['trees'] = self.get_all_trees()
@@ -49,7 +49,15 @@ class MainHandler(tornado.web.RequestHandler):
 
     def return_ident_page(self):
         ident = self.get_argument('_i')
-        defs = self.index.symdeclarations(ident, self.releaseid)
+
+        symid = Symbol.query.get_symid(self.tree_id, ident)
+        if not symid:
+            defs = []
+            refs = []
+        else:
+            defs = Definitions.query.filter(Definitions.symid==symid).all()
+            refs = Ref.query.filter(Ref.symid==symid).all()
+            
         self.detail['defs'] = defs
         print defs
         self.detail['refs'] = []
@@ -156,9 +164,9 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self, *args):
         self.page = args[0]
         self.tree = conf.trees.get(args[1])
-        self.releaseid = self.tree['default_version']
+        self.releaseid = self.tree['version']
         self.files = Files(conf.trees.get(args[1]))
-        self.index= Index(conf.config, self.tree)
+
         if len(args) >= 3:
             self.reqfile = args[2] or '/'
         else:
