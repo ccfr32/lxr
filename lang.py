@@ -37,6 +37,7 @@ class Lang(object):
             elif len(values) >= 6:
                 c_sym, c_file, c_line, c_type, c_ext = values[0:5]
             else:
+                print 'li=%s' % li
                 continue
             c_line = int(c_line.replace(';"', ''))
             c_type = self.lang.typemap.get(c_type)

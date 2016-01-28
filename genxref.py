@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
 import os
 import subprocess
 
@@ -16,8 +18,11 @@ class Genxref(object):
         self.default_releaseid = tree['default_version']
         self.dfs_filetypes('.', self.default_releaseid)
         self.index = Index(config, tree)
+        # 建立swish
         self.gensearch(self.default_releaseid)
+        # ctags 符号
         self.dfs_process_file('.', self.default_releaseid)
+        # ref
         self.dfs_process_refs('.', self.default_releaseid)
 
         
