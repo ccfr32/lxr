@@ -160,6 +160,7 @@ class SimpleParse(object):
 class PythonParse(SimpleParse):
 
     langid = 27
+    lang = 'python'
     blankre = re.compile('([a-zA-Z0-9_\.]+)')
     identdef = re.compile('([a-zA-Z]\w+)', re.M)
     reserved = ['and', 'as', 'assert', 'break', 'class', 'continue', 'def',

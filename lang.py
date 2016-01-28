@@ -6,9 +6,8 @@ from simpleparse import PythonParse
 
 class Lang(object):
 
-    def __init__(self, pathname, releaseid, files, index, config):
+    def __init__(self, pathname, releaseid, files, config):
         self.files = files
-        self.index = index
         self.config = config
         self.pathname = pathname
         self.releaseid = releaseid

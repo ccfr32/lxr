@@ -7,6 +7,9 @@ import subprocess
 from files import Files
 from index import Index
 from lang import Lang
+from simpleparse import PythonParse
+from models import db, Tree, File, Symbol, LangType, Definitions
+from ctags import ctags
 
 class Genxref(object):
 
@@ -14,29 +17,37 @@ class Genxref(object):
         self.files = Files(tree)
         self.filestype = {}
         self.tree = tree
+        self.version = tree['version']
+        self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
+        if self.treeid is None:
+            o = Tree(tree['name'], tree['version'])
+            db.session.add(o)
+            db.session.commit()
+            self.treeid = o.id
+            
         self.config = config
-        self.default_releaseid = tree['default_version']
-        self.dfs_filetypes('.', self.default_releaseid)
-        self.index = Index(config, tree)
+        self.parse = PythonParse(config, tree)
+        
+        self.dfs_filetypes('.', self.version)
         # 建立swish
-        self.gensearch(self.default_releaseid)
+        self.gensearch(self.version)
         # ctags 符号
-        self.dfs_process_file('.', self.default_releaseid)
-        # ref
-        self.dfs_process_refs('.', self.default_releaseid)
+        self.symbols('.', self.version)
+        # sym ref
+        self.symref('.', self.version)
 
         
-    def feedswish(self, pathname, releaseid, swish):
-        if self.files.isdir(pathname, releaseid):
-            dirs, files = self.files.getdir(pathname, releaseid)
+    def feedswish(self, pathname, version, swish):
+        if self.files.isdir(pathname, version):
+            dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
                 self.feedswish(os.path.join(pathname, i),
-                               releaseid,
+                               version,
                                swish)
         else:
             # filelist.write('%s\n' % pathname)
-            if self.files.getsize(pathname, releaseid) > 0:
-                fp = self.files.getfp(pathname, releaseid)
+            if self.files.getsize(pathname, version) > 0:
+                fp = self.files.getfp(pathname, version)
                 content = fp.read()
                 swish_input = [
                     "Path-Name: %s\n" % pathname,
@@ -49,76 +60,71 @@ class Genxref(object):
                 fp.close()
                 
                 
-    def gensearch(self, releaseid):
-        index_file = "%s.%s.index" % (self.tree['name'], releaseid)
+    def gensearch(self, version):
+        index_file = "%s.%s.index" % (self.tree['name'], version)
         index_file = os.path.join(self.config['swishdirbase'], index_file)
         cmd = '%s -S prog -i stdin -v 1 -c %s -f %s' % (
             self.config['swishbin'],
             self.config['swishconf'],
             index_file)
         swish = subprocess.Popen(cmd, stdin=subprocess.PIPE, shell=True)
-        self.feedswish('.', releaseid, swish)
+        self.feedswish('.', version, swish)
         out, err = swish.communicate()
 
 
-    def _processfile(self, pathname, releaseid):
-        revision = self.files.filerev(pathname, releaseid)
-        fileid = self.index.fileid(pathname, revision)
-        #self.index.setfilerelease(fileid, releaseid)
-        if not self.index.fileindexed(fileid):
-            lang = Lang(pathname, releaseid, self.files, self.index, self.config)
-            ns = lang.indexfile(fileid)
-            #self.index.flushcache()
-            self.index.setfileindexed(fileid)
-        
-        
-    def _processrefs(self, pathname, releaseid, config, files, index):
-        revision = files.filerev(pathname, releaseid)
-        fileid = index.fileid(pathname, revision)
-        
-        if not index.filereferenced(fileid):
-            lang = Lang(pathname, releaseid, self.files, self.index, self.config)
-            ns = lang.referencefile(fileid)
-            #index.flushcache()
-            index.setfilereferenced(fileid)
-
-
-    def dfs_filetypes(self, pathname, releaseid):
-        if self.files.isdir(pathname, releaseid):            
-            dirs, files = self.files.getdir(pathname, releaseid)
+    def dfs_filetypes(self, pathname, version):
+        if self.files.isdir(pathname, version):            
+            dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
-                self.dfs_filetypes(os.path.join(pathname, i), releaseid)
+                self.dfs_filetypes(os.path.join(pathname, i), version)
         else:
-            filetype = self.files.gettype(pathname, releaseid)
-            filename = self.files.toreal(pathname, releaseid)
+            filetype = self.files.gettype(pathname, version)
+            filename = self.files.toreal(pathname, version)
             self.filestype[filename] = filetype
 
             
-    def dfs_process_file(self, pathname, releaseid):
+    def symbols(self, pathname, version):
 
-        if self.files.isdir(pathname, releaseid):
-            dirs, files = self.files.getdir(pathname, releaseid)
+        if self.files.isdir(pathname, version):
+            dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
-                self.dfs_process_file(os.path.join(pathname, i), releaseid)
+                self.symbols(os.path.join(pathname, i), version)
         else:
-            _realfile = self.files.toreal(pathname, releaseid)
+            _realfile = self.files.toreal(pathname, version)
             if _realfile in self.filestype:
-                if self.filestype[_realfile] == 'python':
-                    self._processfile(pathname, releaseid)
-            else:
-                pass
+                if self.filestype[_realfile] != 'python':
+                    return
+                o = File.query.get_or_create(self.treeid, pathname)
+                if not o.has_indexed():
+                    tags = ctags(_realfile, self.parse.lang)
+                    for tag in tags:
+                        sym, line, lang_type, ext = tag
+                        symbol_obj = Symbol.query.get_or_create(self.treeid, sym)
+                        lang_desc = self.parse.typemap[lang_type]
+                        langtype_obj = LangType.query.get_or_create(self.parse.lang, lang_desc)
+                        defin = Definitions(symbol_obj.symid, o.fileid, line, langtype_obj.typeid, ext)
+                        db.session.add(defin)
+                    o.set_indexed()
+                    db.session.add(o)
+            db.session.commit()
                 
             
-    def dfs_process_refs(self, pathname, releaseid):
-        if self.files.isdir(pathname, releaseid):
-            dirs, files = self.files.getdir(pathname, releaseid)
+    def symref(self, pathname, version):
+        if self.files.isdir(pathname, version):
+            dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
-                self.dfs_process_refs(os.path.join(pathname, i), releaseid)
-        elif self.filestype[self.files.toreal(pathname, releaseid)] != 'bin':
-            self._processrefs(pathname, releaseid)
-            
-        
+                self.symref(os.path.join(pathname, i), version)
+        else:
+            _realfile = self.files.toreal(pathname, version)
+            if _realfile in self.filestype:
+                o = File.query.get_or_create(self.treeid, pathname)
+                if not o.has_refered():
+                    #tags = ctags(abspath, lang)
+                    o.set_refered()
+                    db.session.add(o)
+                    db.session.commit()
 
+                    
 if __name__ == "__main__":
     from conf import config, trees
 

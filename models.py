@@ -26,16 +26,12 @@ from sqlalchemy.util import to_list
 
 from signals import Namespace
 
-
-
-
 _camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
 
 _signals = Namespace()
 
-
-
-
+models_committed = _signals.signal('models-committed')
+before_models_committed = _signals.signal('before-models-committed')
 
 def _make_table(db):
     def _make_table(*args, **kwargs):
@@ -202,7 +198,6 @@ def signalling_mapper(*args, **kwargs):
     return sqlalchemy.orm.mapper(*args, **kwargs)
 
 
-
 class _ModelTableNameDescriptor(object):
 
     def __get__(self, obj, type):
@@ -342,53 +337,128 @@ class Tree(db.Model):
 class Definitions(db.Model):
     __tablename__ = 'lxr_definitions'
 
-    symid = Column(Integer, nullable=False, primary_key=True)
-    fileid = Column(Integer, nullable=False, primary_key=True)
+    id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
+    symid = Column(Integer, nullable=False)
+    fileid = Column(Integer, nullable=False)
     line = Column(Integer, nullable=False)
     typeid = Column(Integer, nullable=False)
-    langid = Column(Integer, nullable=False)
     relid = Column(Integer, nullable=True)
     
-    def __init__(self, symid, fileid, line, langid, relid=None):
+    def __init__(self, symid, fileid, line, typeid, relid=None):
         self.symid = symid
         self.fileid = fileid
         self.line = line
-        self.langid = langid
+        self.typeid = typeid
         self.relid = relid
 
 
+class LangTypeQuery(BaseQuery):
+
+    def get_or_create(self, lang, desc):
+        rv = self.filter(LangType.lang == lang, LangType.desc == desc).first()
+        if rv is None:
+            rv = LangType(lang, desc)
+            db.session.add(rv)
+            db.session.commit()
+        return rv
+    
+        
 class LangType(db.Model):
     __tablename__ = 'lxr_langtype'
 
-    typeid = Column(Integer, nullable=False, primary_key=True)
-    langid = Column(Integer, nullable=False, primary_key=True)
-    declaration = Column(Integer, nullable=False, default='')
+    query_class = LangTypeQuery
     
+    typeid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+    lang = Column(String(30), nullable=False)
+    desc = Column(String(30), nullable=False, default='')
+
+    def __init__(self, lang, desc):
+        self.lang = lang
+        self.desc = desc
+
+class SymbolQuery(BaseQuery):
+
+    def get_or_create(self, treeid, name):
+        rv = self.filter(Symbol.symname==name, Symbol.treeid==treeid).first()
+        if rv is None:
+            rv = Symbol(treeid, name)
+            self.session.add(rv)
+            self.session.commit()
+        return rv
     
 class Symbol(db.Model):
     __tablename__ = 'lxr_symbol'
+
+    query_class = SymbolQuery
     
-    symid = Column(Integer, nullable=False, primary_key=True)
+    symid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
     treeid = Column(Integer, nullable=False)
-    symname = Column(String(32), nullable=False)
+    symname = Column(String(64), nullable=False)
     symcount = Column(Integer, nullable=False, default=1)
 
+    def __init__(self, treeid, symname, symcount=1):
+        self.treeid = treeid
+        self.symname = symname
+        self.symcount = symcount
 
+
+
+class FileQuery(BaseQuery):
+
+    def get_or_create(self, treeid, filename):
+        rv = self.filter(File.treeid==treeid, File.filename==filename).first()
+        if rv is None:
+            rv = File(treeid, filename)
+            self.session.add(rv)
+            self.session.commit()
+        return rv
+
+    
 class File(db.Model):
     __tablename__ = 'lxr_file'
 
-    fileid = Column(Integer, nullable=False, primary_key=True)
-    treeid = Column(Integer, nullable=False, primary_key=True)
-    filename = Column(String(32), nullable=False)
+    query_class = FileQuery
     
+    fileid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
 
-class Usage(db.Model):
-    __tablename__ = 'lxr_usage'
+    treeid = Column(Integer, nullable=False)
+    filename = Column(String(128), nullable=False)
+    # 1 表是index 2 表示ref
+    status = Column(Integer, nullable=False, default=0)
+    indexed_at = Column(DateTime, nullable=True)
+    refered_at = Column(DateTime, nullable=True)
+    
+    def __init__(self, treeid, filename):
+        self.treeid = treeid
+        self.filename = filename
+
+    def set_indexed(self):
+        self.status = self.status | 1
+
+    def set_refered(self):
+        self.status = self.status | 2
+        
+    def has_indexed(self):
+        return self.status & 1
+
+    def has_refered(self):
+        return self.status & 2
+    
+        
+        
+class Ref(db.Model):
+    __tablename__ = 'lxr_ref'
 
     symid = Column(Integer, nullable=False, primary_key=True)
     fileid = Column(Integer, nullable=False, primary_key=True)
     line = Column(Integer, nullable=False)
 
-    
-    
-    
+    def __init__(self, symid, fileid, line):
+        self.symid = symid
+        self.fileid = fileid
+        self.line = line
+
+if __name__ == "__main__":
+    db.drop_all()        
+    db.create_all()
+

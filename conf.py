@@ -35,16 +35,16 @@ trees = {
         'name': 'redispy',
         'desc': 'redis-py',
         'sourceroot': os.path.join(source_root, 'redis-py'),
-        'all_versions': ['2.4'],
-        'default_version': '2.4',
+        'versions': ['2.4'],
+        'version': '2.4',
     },
     
     'sqlalchemy': {
         'name': 'sqlalchemy',
         'desc': 'sqlalchemy',
         'sourceroot': os.path.join(source_root, 'sqlalchemy'),
-        'all_versions': ['0.9.7'],
-        'default_version': '0.9.7',
+        'versions': ['0.9.7'],
+        'version': '0.9.7',
     },    
 }
 
