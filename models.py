@@ -347,14 +347,12 @@ class Definitions(db.Model):
     fileid = Column(Integer, nullable=False)
     line = Column(Integer, nullable=False)
     typeid = Column(Integer, nullable=False)
-    relid = Column(Integer, nullable=True)
     
-    def __init__(self, symid, fileid, line, typeid, relid=None):
+    def __init__(self, symid, fileid, line, typeid):
         self.symid = symid
         self.fileid = fileid
         self.line = line
         self.typeid = typeid
-        self.relid = relid
 
 
 class LangTypeQuery(BaseQuery):

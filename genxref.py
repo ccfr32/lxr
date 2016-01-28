@@ -20,7 +20,9 @@ class Genxref(object):
         self.version = tree['version']
         self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
 
-            
+        self.commit_cnt = 0
+        self.MAX_COMMIT = 1000
+        
         self.config = config
         self.parse = PythonParse(config, tree)
         
@@ -29,9 +31,10 @@ class Genxref(object):
         self.gensearch(self.version)
         # ctags 符号
         self.symbols('.', self.version)
+        db.session.commit()
         # sym ref
         self.symref('.', self.version)
-
+        db.session.commit()
         
     def feedswish(self, pathname, version, swish):
         if self.files.isdir(pathname, version):
@@ -41,6 +44,11 @@ class Genxref(object):
                                version,
                                swish)
         else:
+            _realfile = self.files.toreal(pathname, version)
+            if _realfile in self.filestype:
+                if self.filestype[_realfile] != 'python':
+                    return
+
             # filelist.write('%s\n' % pathname)
             if self.files.getsize(pathname, version) > 0:
                 fp = self.files.getfp(pathname, version)
@@ -54,7 +62,7 @@ class Genxref(object):
             
                 swish.stdin.write(''.join(swish_input))
                 fp.close()
-                
+        
                 
     def gensearch(self, version):
         index_file = "%s.%s.index" % (self.tree['name'], version)
@@ -80,7 +88,9 @@ class Genxref(object):
 
             
     def symbols(self, pathname, version):
-
+        if self.commit_cnt == self.MAX_COMMIT:
+            db.session.commit()
+            self.commit_cnt = 0
         if self.files.isdir(pathname, version):
             dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
@@ -98,14 +108,17 @@ class Genxref(object):
                         symbol_obj = Symbol.query.get_or_create(self.treeid, sym)
                         lang_desc = self.parse.typemap[lang_type]
                         langtype_obj = LangType.query.get_or_create(self.parse.lang, lang_desc)
-                        defin = Definitions(symbol_obj.symid, o.fileid, line, langtype_obj.typeid, ext)
+                        defin = Definitions(symbol_obj.symid, o.fileid, line, langtype_obj.typeid)
                         db.session.add(defin)
                     o.set_indexed()
                     db.session.add(o)
-            db.session.commit()
+
                 
-            
     def symref(self, pathname, version):
+        if self.commit_cnt == self.MAX_COMMIT:
+            db.session.commit()
+            self.commit_cnt = 0
+
         if self.files.isdir(pathname, version):
             dirs, files = self.files.getdir(pathname, version)
             for i in dirs + files:
@@ -127,7 +140,7 @@ class Genxref(object):
                         db.session.add(ref)
                     o.set_refered()
                     db.session.add(o)
-            db.session.commit()
+
 
                     
 if __name__ == "__main__":
