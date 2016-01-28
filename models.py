@@ -361,7 +361,6 @@ class LangTypeQuery(BaseQuery):
 
     @cached
     def get_or_create(self, lang, desc):
-        print self, type(self), self.__class__.__name__
         rv = self.filter(LangType.lang == lang, LangType.desc == desc).first()
         if rv is None:
             rv = LangType(lang, desc)
