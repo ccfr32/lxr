@@ -16,11 +16,13 @@ from files import Files
 from simpleparse import PythonParse
 import conf
 from index import Index
+from models import Symbol, Ref, Definitions
+
+from dbcache import treecache, langcache, filecache, symbolcache
 
 define("port", default=8888, help="run on the given port", type=int)
 
 class MainHandler(tornado.web.RequestHandler):
-
     
     def prepare(self):
         self.page = None
@@ -47,23 +49,68 @@ class MainHandler(tornado.web.RequestHandler):
         return []
 
 
+    def _identfile(self, filename):
+        return '''<a class="identfile" href="/lxr/source/%s%s">%s</a>''' % (
+            self.tree['name'], filename, filename)
+
+    def _identline(self, filename, line):
+        return '''<a class="identline" href="/lxr/source/%s%s#%04d">%d</a>''' % (
+            self.tree['name'], filename, line, line)
+    
+                                                                               
+    
+    
     def return_ident_page(self):
         ident = self.get_argument('_i')
 
-        symid = Symbol.query.get_symid(self.tree_id, ident)
+        symid = symbolcache.get_symid(self.tree_id, ident)
+        if symid is None:
+            symbolcache.load(self.tree_id)
+            symid = symbolcache.get_symid(self.tree_id, ident)
         if not symid:
             defs = []
             refs = []
         else:
-            defs = Definitions.query.filter(Definitions.symid==symid).all()
-            refs = Ref.query.filter(Ref.symid==symid).all()
-            
+            objs = Definitions.query.filter(Definitions.symid==symid).all()
+            defs = []
+            for o in objs:
+                lang, desc = langcache.get_lang_desc(o.typeid)
+                if lang is None and desc is None:
+                    langcache.load()
+                lang, desc = langcache.get_lang_desc(o.typeid)
+
+                treeid, filename = filecache.get_treeid_filename(o.fileid)
+                if treeid is None and filename is None:
+                    filecache.load(self.tree_id)
+                    treeid, filename = filecache.get_treeid_filename(o.fileid)
+                defs.append(
+                    (desc,
+                     self._identfile(filename),
+                     self._identline(filename, o.line)
+                    )
+                )
+
+            objs = Ref.query.filter(Ref.symid==symid).all()
+            refs = []
+            for o in objs:
+                treeid, filename = filecache.get_treeid_filename(o.fileid)
+                if treeid is None and filename is None:
+                    filecache.load(self.tree_id)
+                    treeid, filename = filecache.get_treeid_filename(o.fileid)
+                refs.append(
+                    (desc,
+                     self._identfile(filename),
+                     self._identline(filename, o.line)
+                    )
+                )
         self.detail['defs'] = defs
-        print defs
-        self.detail['refs'] = []
+        self.detail['refs'] = refs
+        self.detail['ident'] = ident
         self.render("ident.html", **self.detail)
 
 
+    
+        
     def _calc_dir_content(self):
         dirs, files = self.files.getdir(self.reqfile, self.releaseid)
         if not dirs and not files:
@@ -164,6 +211,7 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self, *args):
         self.page = args[0]
         self.tree = conf.trees.get(args[1])
+        self.tree_id = treecache.get_treeid(self.tree['name'], self.tree['version'])
         self.releaseid = self.tree['version']
         self.files = Files(conf.trees.get(args[1]))
 

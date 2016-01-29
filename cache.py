@@ -64,7 +64,7 @@ class BaseCache(object):
 
 
 class SimpleCache(BaseCache):
-    def __init__(self, threshold=500, timeout=300):
+    def __init__(self, threshold=100000, timeout=86400*30):
         BaseCache.__init__(self, timeout)
         self._cache = {}
         self._threshold = threshold

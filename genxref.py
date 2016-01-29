@@ -88,18 +88,22 @@ class Genxref(object):
 
             
     def symbols(self, pathname, version):
-        if self.commit_cnt == self.MAX_COMMIT:
-            db.session.commit()
-            self.commit_cnt = 0
-        if self.files.isdir(pathname, version):
-            dirs, files = self.files.getdir(pathname, version)
-            for i in dirs + files:
-                self.symbols(os.path.join(pathname, i), version)
-        else:
-            _realfile = self.files.toreal(pathname, version)
-            if _realfile in self.filestype:
-                if self.filestype[_realfile] != 'python':
-                    return
+        _files = [(pathname, version)]
+        while _files:
+
+            if self.commit_cnt == self.MAX_COMMIT:
+                db.session.commit()
+                self.commit_cnt = 0
+            pathname, version = _files.pop(0)
+            
+            if self.files.isdir(pathname, version):
+                dirs, files = self.files.getdir(pathname, version)
+                for i in dirs + files:
+                    _files.append((os.path.join(pathname, i), version))
+            else:
+                _realfile = self.files.toreal(pathname, version)
+                if _realfile not in self.filestype or self.filestype[_realfile] != 'python':
+                    continue
                 o = File.query.get_or_create(self.treeid, pathname)
                 if not o.has_indexed():
                     tags = ctags(_realfile, self.parse.lang)
@@ -115,19 +119,22 @@ class Genxref(object):
 
                 
     def symref(self, pathname, version):
-        if self.commit_cnt == self.MAX_COMMIT:
-            db.session.commit()
-            self.commit_cnt = 0
+        _files = [(pathname, version)]
+        while _files:
+            if self.commit_cnt == self.MAX_COMMIT:
+                db.session.commit()
+                self.commit_cnt = 0
 
-        if self.files.isdir(pathname, version):
-            dirs, files = self.files.getdir(pathname, version)
-            for i in dirs + files:
-                self.symref(os.path.join(pathname, i), version)
-        else:
-            _realfile = self.files.toreal(pathname, version)
-            if _realfile in self.filestype:
-                if self.filestype[_realfile] != 'python':
-                    return
+            pathname, version = _files.pop(0)
+            print pathname, len(_files)
+            if self.files.isdir(pathname, version):
+                dirs, files = self.files.getdir(pathname, version)
+                for i in dirs + files:
+                    _files.append((os.path.join(pathname, i), version))
+            else:
+                _realfile = self.files.toreal(pathname, version)
+                if _realfile not in self.filestype or self.filestype[_realfile] != 'python':
+                    continue
                 o = File.query.get_or_create(self.treeid, pathname)
                 if not o.has_refered():
                     _fp = open(_realfile)
@@ -138,14 +145,16 @@ class Genxref(object):
                         symbol_obj = Symbol.query.get_or_create(self.treeid, word)
                         ref = Ref(symbol_obj.symid, o.fileid, line)
                         db.session.add(ref)
+                        self.commit_cnt +=1 
                     o.set_refered()
                     db.session.add(o)
+                    self.commit_cnt += 1
 
 
                     
 if __name__ == "__main__":
     from conf import config, trees
 
-    tree = trees['sqlalchemy']
+    tree = trees['redispy']
     g = Genxref(config, tree)
 

@@ -18,10 +18,9 @@
 
 <form method="get" action="$varbtnaction">
   <p>
-    $variables
     <label>
       <b>Identifier: </b>
-      <input id="focus" type="text" name="_i" value="$identifier_escaped" size="15">
+      <input id="focus" type="text" name="_i" value="{{ident}}" size="15">
     </label>
     <label>
       <input type="checkbox" name="_identdefonly" value="1" $checked>
@@ -36,16 +35,14 @@
 <table class="identdef"> 
   <tr>
     <th class="identtype">Type</th>
-    <th class="identrel">Member of</th>
     <th class="identfile">File</th>
     <th class="identline">Line</th>
   </tr>
   {% for df in defs %}
   <tr>
-    <td class="identtype">df['type']</td>
-    <td class="identrel">df['rel']</td>
-    <td class="identfile $refinvalid">df['file']</td>
-    <td class="identline $refinvalid">df['line']</td>
+    <td class="identtype">{{df[0]}}</td>
+    <td class="identfile">{% raw df[1] %}</td>
+    <td class="identline">{% raw df[2] %}</td>
   </tr>
   {% end %}
 </table>
@@ -61,8 +58,8 @@
   </tr>
   {% for ref in refs %}
   <tr>
-    <td class="identfile $refinvalid">ref['file']</td>
-    <td class="identline $refinvalid">ref['lines']</td>
+    <td class="identfile">{% raw ref[0] %}</td>
+    <td class="identline">{% raw ref[1] %}</td>
   </tr>
   {% end %}
 </table>
