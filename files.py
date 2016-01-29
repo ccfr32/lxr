@@ -96,6 +96,8 @@ class Files(object):
         
     
     def toreal(self, pathname, releaseid):
+        if pathname == '/':
+            return os.path.abspath(os.path.join(self.rootpath, releaseid))
         if pathname.startswith("/"):
             pathname = pathname[1:]
         return os.path.abspath(os.path.join(

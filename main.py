@@ -98,8 +98,7 @@ class MainHandler(tornado.web.RequestHandler):
                     filecache.load(self.tree_id)
                     treeid, filename = filecache.get_treeid_filename(o.fileid)
                 refs.append(
-                    (desc,
-                     self._identfile(filename),
+                    (self._identfile(filename),
                      self._identline(filename, o.line)
                     )
                 )

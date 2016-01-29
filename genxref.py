@@ -26,14 +26,14 @@ class Genxref(object):
         self.config = config
         self.parse = PythonParse(config, tree)
         
-        self.dfs_filetypes('.', self.version)
+        self.dfs_filetypes('/', self.version)
         # 建立swish
         self.gensearch(self.version)
         # ctags 符号
-        self.symbols('.', self.version)
+        self.symbols('/', self.version)
         db.session.commit()
         # sym ref
-        self.symref('.', self.version)
+        self.symref('/', self.version)
         db.session.commit()
         
     def feedswish(self, pathname, version, swish):
