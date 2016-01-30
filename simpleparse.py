@@ -8,6 +8,7 @@ import string
 from files import Files
 
 from models import Symbol, Tree
+from dbcache import symbolcache
 
 def find_escape_char(s, right, left):
     c = 0
@@ -53,8 +54,10 @@ class SimpleParse(object):
 
 
     def is_ident(self, word):
-        rv = Symbol.query.get_by_name(self.treeid, word)
-        return True if rv else False
+        rv = symbolcache.get_symid(self.treeid, word)
+        if rv is None:
+            return False
+        return True
     
 
     def is_reserved(self, word):

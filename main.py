@@ -20,6 +20,9 @@ from models import Symbol, Ref, Definitions
 
 from dbcache import treecache, langcache, filecache, symbolcache
 
+symbolcache.load(1)
+filecache.load(1)
+
 define("port", default=8888, help="run on the given port", type=int)
 
 class MainHandler(tornado.web.RequestHandler):
@@ -56,9 +59,6 @@ class MainHandler(tornado.web.RequestHandler):
     def _identline(self, filename, line):
         return '''<a class="identline" href="/lxr/source/%s%s#%04d">%d</a>''' % (
             self.tree['name'], filename, line, line)
-    
-                                                                               
-    
     
     def return_ident_page(self):
         ident = self.get_argument('_i')
@@ -107,9 +107,6 @@ class MainHandler(tornado.web.RequestHandler):
         self.detail['ident'] = ident
         self.render("ident.html", **self.detail)
 
-
-    
-        
     def _calc_dir_content(self):
         dirs, files = self.files.getdir(self.reqfile, self.releaseid)
         if not dirs and not files:
@@ -231,14 +228,15 @@ class MainHandler(tornado.web.RequestHandler):
         else:
             self.return_index_page()
 
-
+        
+            
 def main():
     settings = dict(
         cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
         template_path=os.path.join(os.path.dirname(__file__), "temp/html"),
         static_path=os.path.join(os.path.dirname(__file__), "temp"),
         xsrf_cookies=True,
-        debug=True,
+        debug=False,
     )
 
     mapping = [
