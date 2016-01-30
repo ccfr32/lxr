@@ -231,6 +231,7 @@ class MainHandler(tornado.web.RequestHandler):
         
             
 def main():
+    tornado.options.parse_command_line()
     settings = dict(
         cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
         template_path=os.path.join(os.path.dirname(__file__), "temp/html"),
@@ -248,7 +249,7 @@ def main():
     )
 
     http_server = httpserver.HTTPServer(app)
-    http_server.listen(8888)
+    http_server.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
 
 
