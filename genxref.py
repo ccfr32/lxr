@@ -11,6 +11,8 @@ from simpleparse import PythonParse
 from models import db, Tree, File, Symbol, LangType, Definitions, Ref
 from ctags import ctags
 
+from dbcache import treecache, langcache, filecache, symbolcache
+
 class Genxref(object):
 
     def __init__(self, config, tree):
@@ -18,23 +20,59 @@ class Genxref(object):
         self.filestype = {}
         self.tree = tree
         self.version = tree['version']
-        self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
-
         self.commit_cnt = 0
-        self.MAX_COMMIT = 1000
-        
+        self.MAX_COMMIT = 1000        
         self.config = config
-        self.parse = PythonParse(config, tree)
+        self.symid = Symbol.next_symid()
+        self.init_tree()
+        self.init_lang()
+        self.pathname_to_obj = {}
         
-        self.dfs_filetypes('/', self.version)
+        self.init_files('/', self.version)
         # 建立swish
         self.gensearch(self.version)
         # ctags 符号
         self.symbols('/', self.version)
-        db.session.commit()
         # sym ref
         self.symref('/', self.version)
+
+
+        
+    def init_tree(self):
+        self.treeid = treecache.get_treeid(tree['name'], tree['version'])
+        if self.treeid is None:
+            self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
+            assert self.treeid is not None
+            treecache.load()
+
+    def init_lang(self):
+        self.parse = PythonParse(self.config, self.tree)
+        assert LangType.query.get_or_create('python', '') is not None
+        for desc in self.parse.typemap.values():
+            if langcache.get_typeid('python', desc) is None:
+                assert LangType.query.get_or_create('python', desc) is not None
+        langcache.load()
+
+
+    def init_files(self, pathname, version):
+
+        _files = [(pathname, version)]
+        
+        while _files:
+            pathname, version = _files.pop(0)
+
+            if self.files.isdir(pathname, version):            
+                dirs, files = self.files.getdir(pathname, version)
+                for i in dirs + files:
+                    _files.append((os.path.join(pathname, i), version))
+            else:
+                f = File(self.treeid, pathname)
+                f.filetype = self.files.gettype(pathname, version)
+                db.session.add(f)
+                self.pathname_to_obj[pathname] = f
         db.session.commit()
+        filecache.load(self.treeid)
+
         
     def feedswish(self, pathname, version, swish):
         if self.files.isdir(pathname, version):
@@ -76,85 +114,62 @@ class Genxref(object):
         out, err = swish.communicate()
 
 
-    def dfs_filetypes(self, pathname, version):
-        if self.files.isdir(pathname, version):            
-            dirs, files = self.files.getdir(pathname, version)
-            for i in dirs + files:
-                self.dfs_filetypes(os.path.join(pathname, i), version)
-        else:
-            filetype = self.files.gettype(pathname, version)
-            filename = self.files.toreal(pathname, version)
-            self.filestype[filename] = filetype
-
-            
     def symbols(self, pathname, version):
         _files = [(pathname, version)]
         while _files:
-
-            if self.commit_cnt == self.MAX_COMMIT:
-                db.session.commit()
-                self.commit_cnt = 0
             pathname, version = _files.pop(0)
-            
             if self.files.isdir(pathname, version):
                 dirs, files = self.files.getdir(pathname, version)
                 for i in dirs + files:
                     _files.append((os.path.join(pathname, i), version))
             else:
-                _realfile = self.files.toreal(pathname, version)
-                if _realfile not in self.filestype or self.filestype[_realfile] != 'python':
-                    continue
-                o = File.query.get_or_create(self.treeid, pathname)
-                if not o.has_indexed():
-                    tags = ctags(_realfile, self.parse.lang)
+                o = self.pathname_to_obj[pathname]
+                if o.filetype == self.parse.lang and not o.has_indexed():
+                    tags = ctags(self.files.toreal(pathname, version), self.parse.lang)
                     for tag in tags:
                         sym, line, lang_type, ext = tag
-                        symbol_obj = Symbol.query.get_or_create(self.treeid, sym)
-                        lang_desc = self.parse.typemap[lang_type]
-                        langtype_obj = LangType.query.get_or_create(self.parse.lang, lang_desc)
-                        defin = Definitions(symbol_obj.symid, o.fileid, line, langtype_obj.typeid)
+                        lang_typeid = langcache.get_typeid(self.parse.lang, self.parse.typemap[lang_type])
+                        symbol_obj = Symbol(self.treeid, sym, self.symid)
+                        defin = Definitions(self.symid, o.fileid, line, lang_typeid)
+                        db.session.add(symbol_obj)
                         db.session.add(defin)
+                        self.symid += 1
                     o.set_indexed()
                     db.session.add(o)
+        db.session.commit()
+        symbolcache.load(self.treeid)
+        
 
-                
     def symref(self, pathname, version):
         _files = [(pathname, version)]
         while _files:
-            if self.commit_cnt == self.MAX_COMMIT:
-                db.session.commit()
-                self.commit_cnt = 0
-
             pathname, version = _files.pop(0)
-            print pathname, len(_files)
             if self.files.isdir(pathname, version):
                 dirs, files = self.files.getdir(pathname, version)
                 for i in dirs + files:
                     _files.append((os.path.join(pathname, i), version))
             else:
-                _realfile = self.files.toreal(pathname, version)
-                if _realfile not in self.filestype or self.filestype[_realfile] != 'python':
-                    continue
-                o = File.query.get_or_create(self.treeid, pathname)
-                if not o.has_refered():
-                    _fp = open(_realfile)
+                o = self.pathname_to_obj[pathname]
+                if o.filetype == self.parse.lang and not o.has_refered():
+                    _fp = open(self.files.toreal(pathname, version))
                     _buf = _fp.read()
                     _fp.close()
                     words = self.parse.get_idents(_buf)
                     for word, line in words:
-                        symbol_obj = Symbol.query.get_or_create(self.treeid, word)
-                        ref = Ref(symbol_obj.symid, o.fileid, line)
+                        _symid = symbolcache.get_symid(self.treeid, word)
+                        if _symid is None:
+                            continue
+                        ref = Ref(_symid, o.fileid, line)
                         db.session.add(ref)
-                        self.commit_cnt +=1 
                     o.set_refered()
                     db.session.add(o)
-                    self.commit_cnt += 1
+        db.session.commit()
 
 
                     
 if __name__ == "__main__":
     from conf import config, trees
 
-    tree = trees['redispy']
+    tree = trees['sqlalchemy']
     g = Genxref(config, tree)
 

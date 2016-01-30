@@ -61,21 +61,20 @@ class SimpleParse(object):
         return word in self.reserved
     
     def get_idents(self, buf):
-        self.parse(buf)
-        line = 0
+        lines = buf.split('\n')
+        line_no = 0
         kk = []
-        for fragtype, frag in self.frags:
-            line += frag.count('\n')
-            if fragtype != 'code':
+        for li in lines:
+            line_no += 1
+            if not li:
                 continue
-            ss = self.identdef.split(frag)
+            ss = self.identdef.split(li)
             for i in ss:
                 if not i:
                     continue
                 if self.is_reserved(i):
                     continue
-                if self.is_ident(i):
-                    kk.append((i, line))
+                kk.append((i, line_no))
         return kk
                 
     

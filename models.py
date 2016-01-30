@@ -405,21 +405,29 @@ class SymbolQuery(BaseQuery):
         return rv
     
 
+from sqlalchemy.sql import func
+    
 class Symbol(db.Model):
     __tablename__ = 'src_symbol'
 
     query_class = SymbolQuery
     
-    symid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
+    symid = Column(Integer, nullable=False, primary_key=True)
     treeid = Column(Integer, nullable=False)
     symname = Column(String(64), nullable=False)
-    symcount = Column(Integer, nullable=False, default=1)
 
-    def __init__(self, treeid, symname, symcount=1):
+    def __init__(self, treeid, symname, symid=1):
         self.treeid = treeid
         self.symname = symname
-        self.symcount = symcount
+        self.symid = symid 
 
+    @classmethod
+    def next_symid(cls):
+        qry = db.session.query(func.max(cls.symid).label('max_symid')).first()
+        if qry and qry.max_symid:
+            return qry.max_symid + 1
+        return 1
+    
 
 
 class FileQuery(BaseQuery):
@@ -443,6 +451,7 @@ class File(db.Model):
 
     treeid = Column(Integer, nullable=False)
     filename = Column(String(128), nullable=False)
+    filetype = Column(String(16), nullable=True)
     # 1 表是index 2 表示ref
     status = Column(Integer, nullable=False, default=0)
     indexed_at = Column(DateTime, nullable=True)
