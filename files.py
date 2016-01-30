@@ -42,7 +42,6 @@ class Files(object):
         return os.path.getsize(self.toreal(pathname, releaseid))
 
     def gettype(self, pathname, releaseid):
-        pathname = pathname.lower()
         idx = pathname.rfind(".")
         if idx > 0:
             ext = pathname[idx+1:]
