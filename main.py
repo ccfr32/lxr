@@ -120,7 +120,7 @@ class MainHandler(tornado.web.RequestHandler):
             i['class'] = 'dirfolder'
             i['dirclass'] = 'dirrow%d' % (_count%2 + 1)
             i['href'] = "/lxr/source/%s%s" % (self.tree['name'], os.path.dirname(self.reqfile))
-            i['img'] = '/icons/back.gif'
+            i['img'] = '/lxr/icons/back.gif'
             i['filesize'] = '-'
             i['modtime'] = '-'
             i['desc'] = ''
