@@ -3,9 +3,9 @@
 <head>
   <title>2.10.3 general search</title>
   <base href="http://{{request.host}}/">
-  <link rel="stylesheet" type="text/css" href="{{static_url('css/lxr.css')}}">
-  <link rel="alternate stylesheet" type="text/css" href="{{static_url('css/classic.css')}}" title="templates/classic">
-  <link  rel="icon" type="image/x-icon" href="{{static_url('image/LXRlogo32.ico')}}">
+  <link rel="stylesheet" type="text/css" href="/lxr{{static_url('css/lxr.css')}}">
+  <link rel="alternate stylesheet" type="text/css" href="/lxr{{static_url('css/classic.css')}}" title="templates/classic">
+  <link  rel="icon" type="image/x-icon" href="/lxr{{static_url('image/LXRlogo32.ico')}}">
   <script type="text/javascript">
     function ensureFocus() {
         if (document.getElementById("focus")) {
@@ -30,7 +30,7 @@
     </tr>
     <tr>
       <td class="leftmost">
-	<a href="/"> <img src="{{static_url('image/LXRlogo64.jpeg')}}" alt="Back to home page" style="border: none"></a>
+	<a href="/"> <img src="/lxr{{static_url('image/LXRlogo64.jpeg')}}" alt="Back to home page" style="border: none"></a>
       </td>
       <td>
 	<table class="header">
@@ -106,10 +106,10 @@
     </td>
     <td class="rightmost">
       <a href="http://jigsaw.w3.org/css-validator/check/referer">
-	<img src="{{static_url('image/vcss.gif')}}" alt="Valid CSS 2.1!" height="31" width="88">
+	<img src="/lxr{{static_url('image/vcss.gif')}}" alt="Valid CSS 2.1!" height="31" width="88">
       </a>
       <a href="http://validator.w3.org/check?uri=referer">
-	<img src="{{static_url('image/valid-html401.png')}}" alt="Valid HTML 4.01!" height="31" width="88">
+	<img src="/lxr{{static_url('image/valid-html401.png')}}" alt="Valid HTML 4.01!" height="31" width="88">
       </a>
     </td>
   </tr>

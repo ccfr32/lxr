@@ -137,7 +137,7 @@ class MainHandler(tornado.web.RequestHandler):
                 i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, dir_name)
             else:
                 i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], dir_name)
-            i['img'] = '/icons/folder.gif'
+            i['img'] = '/lxr/icons/folder.gif'
             i['filesize'] = '-'
             i['modtime'] = '-'
             i['desc'] = ''
@@ -152,7 +152,7 @@ class MainHandler(tornado.web.RequestHandler):
                 i['href'] = "/lxr/source/%s%s/%s" % (self.tree['name'], self.reqfile, file_name)
             else:
                 i['href'] = "/lxr/source/%s/%s" % (self.tree['name'], file_name)
-            i['img'] = '/icons/generic.gif'
+            i['img'] = '/lxr/icons/generic.gif'
             i['filesize'] = '-'
             i['modtime'] = '-'
             i['desc'] = ''
@@ -241,8 +241,9 @@ def main():
     )
 
     mapping = [
+        (r"/lxr/static/(.+)", tornado.web.StaticFileHandler, dict(path=settings['static_path'])),
+        (r"/lxr/icons/(.+)", tornado.web.StaticFileHandler, dict(path=settings['static_path']+"/icons/")),
         (r"/lxr/(\w+)/(\w+)(/.*)?", MainHandler),
-        (r"/icons/(.+)", tornado.web.StaticFileHandler, dict(path=settings['static_path']+"/icons/")),
     ]
     app = tornado.web.Application(
         mapping, **settings
