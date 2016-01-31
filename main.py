@@ -44,6 +44,8 @@ class MainHandler(tornado.web.RequestHandler):
         }
         
 
+    
+        
     def get_all_trees(self):
         return conf.trees.values()
 
@@ -204,6 +206,21 @@ class MainHandler(tornado.web.RequestHandler):
     def return_index_page(self):
         self.render("index.html", **self.detail)
         
+
+    def get_banner_reqfile(self):
+        htmls = []
+        href = '/lxr/source/%s' % self.tree['name']
+        paths = filter(None, self.reqfile.split('/'))
+        htmls.append('<span class="banner">')
+        htmls.append('<a class="banner" href="%s">%s</a>' % (href, self.tree['version']))
+        for path in paths:
+            href = href + '/' + path
+            htmls.append('/')
+            htmls.append('<a class="banner" href="%s">%s</a>' % (href, path))
+        htmls.append('</span>')
+        return ''.join(htmls)
+    
+        
     def get(self, *args):
         self.page = args[0]
         self.tree = conf.trees.get(args[1])
@@ -217,6 +234,7 @@ class MainHandler(tornado.web.RequestHandler):
             self.reqfile = '/'
         self.detail['tree'] = self.tree
         self.detail['reqfile'] = self.reqfile
+        self.detail['banner_reqfile'] = self.get_banner_reqfile()
         self.detail['files'] = self.files
         self.detail['page'] = self.page
         if self.page == 'search':
