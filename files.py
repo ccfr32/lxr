@@ -52,9 +52,9 @@ class Files(object):
         elif ext == 'c':
             return 'c'
         elif ext == 'cpp' or ext == 'cc':
-            return 'cpp'
+            return 'c++'
         elif ext == 'h':
-            return 'cpp'
+            return 'c++'
 
         if pathname == 'makefile':
             return 'makefile'
@@ -68,8 +68,9 @@ class Files(object):
 
     def parseable(self, pathname, releaseid):
         ftype = self.gettype(pathname, releaseid)
-        if ftype == 'python':
+        if ftype in ['python', 'c++', 'c', 'h']:
             return True
+        
         return False
     
     

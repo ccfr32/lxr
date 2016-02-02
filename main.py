@@ -13,7 +13,7 @@ from tornado.options import define, options, parse_command_line
 from tornado import template
 
 from files import Files
-from simpleparse import PythonParse
+from simpleparse import *
 import conf
 from index import Index
 from models import Symbol, Ref, Definitions
@@ -167,6 +167,15 @@ class MainHandler(tornado.web.RequestHandler):
     def _calc_code_file(self):
         if self.reqfile.lower().endswith(".py"):
             parse = PythonParse(conf.config, self.tree)
+        elif self.reqfile.lower().endswith(".c"):
+            parse = CParse(conf.config, self.tree)
+        elif self.reqfile.lower().endswith(".cpp"):
+            parse = CPPParse(conf.config, self.tree)
+        elif self.reqfile.lower().endswith(".h"):
+            parse = CPPParse(conf.config, self.tree)
+        else:
+            parse = None
+        if parse:
             parse.parse_file(self.reqfile, self.releaseid)
             return parse.out()
         return self._calc_raw_file()

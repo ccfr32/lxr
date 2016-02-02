@@ -1,3 +1,4 @@
 *.pyc
 conf.py
 conf.py.backup
+temp/html/base.html

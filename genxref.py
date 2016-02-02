@@ -7,7 +7,7 @@ import subprocess
 from files import Files
 from index import Index
 from lang import Lang
-from simpleparse import PythonParse
+from simpleparse import *
 from models import db, Tree, File, Symbol, LangType, Definitions, Ref
 from ctags import ctags
 
@@ -24,6 +24,7 @@ class Genxref(object):
         self.MAX_COMMIT = 1000        
         self.config = config
         self.symid = Symbol.next_symid()
+
         self.init_tree()
         self.init_lang()
         self.pathname_to_obj = {}
@@ -37,7 +38,6 @@ class Genxref(object):
         self.symref('/', self.version)
 
 
-        
     def init_tree(self):
         self.treeid = treecache.get_treeid(tree['name'], tree['version'])
         if self.treeid is None:
@@ -45,14 +45,17 @@ class Genxref(object):
             assert self.treeid is not None
             treecache.load()
 
-    def init_lang(self):
-        self.parse = PythonParse(self.config, self.tree)
-        assert LangType.query.get_or_create('python', '') is not None
-        for desc in self.parse.typemap.values():
-            if langcache.get_typeid('python', desc) is None:
-                assert LangType.query.get_or_create('python', desc) is not None
-        langcache.load()
 
+    def init_lang(self):
+        self.parses = {}
+        for k, v in parses.iteritems():
+            self.parses[k] = v(self.config, self.tree)
+
+            assert LangType.query.get_or_create(k, '') is not None
+            for desc in v.typemap.values():
+                assert LangType.query.get_or_create(k, desc) is not None
+        langcache.load()
+        
 
     def init_files(self, pathname, version):
 
@@ -84,7 +87,7 @@ class Genxref(object):
         else:
             _realfile = self.files.toreal(pathname, version)
             if _realfile in self.filestype:
-                if self.filestype[_realfile] != 'python':
+                if self.filestype[_realfile] not in self.parses:
                     return
 
             # filelist.write('%s\n' % pathname)
@@ -124,11 +127,11 @@ class Genxref(object):
                     _files.append((os.path.join(pathname, i), version))
             else:
                 o = self.pathname_to_obj[pathname]
-                if o.filetype == self.parse.lang and not o.has_indexed():
-                    tags = ctags(self.files.toreal(pathname, version), self.parse.lang)
+                if o.filetype in self.parses and not o.has_indexed():
+                    tags = ctags(self.files.toreal(pathname, version), o.filetype)
                     for tag in tags:
                         sym, line, lang_type, ext = tag
-                        lang_typeid = langcache.get_typeid(self.parse.lang, self.parse.typemap[lang_type])
+                        lang_typeid = langcache.get_typeid(o.filetype, self.parses[o.filetype].typemap[lang_type])
                         symbol_obj = Symbol(self.treeid, sym, self.symid)
                         defin = Definitions(self.symid, o.fileid, line, lang_typeid)
                         db.session.add(symbol_obj)
@@ -150,11 +153,11 @@ class Genxref(object):
                     _files.append((os.path.join(pathname, i), version))
             else:
                 o = self.pathname_to_obj[pathname]
-                if o.filetype == self.parse.lang and not o.has_refered():
+                if o.filetype in self.parses and not o.has_refered():
                     _fp = open(self.files.toreal(pathname, version))
                     _buf = _fp.read()
                     _fp.close()
-                    words = self.parse.get_idents(_buf)
+                    words = self.parses[o.filetype].get_idents(_buf)
                     for word, line in words:
                         _symid = symbolcache.get_symid(self.treeid, word)
                         if _symid is None:
@@ -170,6 +173,6 @@ class Genxref(object):
 if __name__ == "__main__":
     from conf import config, trees
 
-    tree = trees['sqlalchemy']
+    tree = trees['redispy']
     g = Genxref(config, tree)
 

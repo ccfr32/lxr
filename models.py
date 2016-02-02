@@ -331,8 +331,8 @@ class Tree(db.Model):
     query_class = TreeQuery
     
     id = Column(Integer, nullable=False, autoincrement=True, primary_key=True)
-    name = Column(String(32), nullable=False)
-    version = Column(String(32), nullable=False)
+    name = Column(String(64), nullable=False)
+    version = Column(String(64), nullable=False)
 
     def __init__(self, name, version):
         self.name = name
@@ -373,8 +373,8 @@ class LangType(db.Model):
     query_class = LangTypeQuery
     
     typeid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
-    lang = Column(String(30), nullable=False)
-    desc = Column(String(30), nullable=False, default='')
+    lang = Column(String(64), nullable=False)
+    desc = Column(String(128), nullable=False, default='')
 
     def __init__(self, lang, desc):
         self.lang = lang
@@ -414,7 +414,7 @@ class Symbol(db.Model):
     
     symid = Column(Integer, nullable=False, primary_key=True)
     treeid = Column(Integer, nullable=False)
-    symname = Column(String(64), nullable=False)
+    symname = Column(String(128), nullable=False)
 
     def __init__(self, treeid, symname, symid=1):
         self.treeid = treeid
@@ -450,7 +450,7 @@ class File(db.Model):
     fileid = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
 
     treeid = Column(Integer, nullable=False)
-    filename = Column(String(128), nullable=False)
+    filename = Column(String(256), nullable=False)
     filetype = Column(String(16), nullable=True)
     # 1 表是index 2 表示ref
     status = Column(Integer, nullable=False, default=0)
