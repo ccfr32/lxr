@@ -16,7 +16,7 @@ from files import Files
 from simpleparse import *
 import conf
 from index import Index
-from models import Symbol, Ref, Definitions
+from models import Symbol, Ref, Definitions, db
 
 from dbcache import treecache, langcache, filecache, symbolcache
 
@@ -26,7 +26,10 @@ filecache.load(1)
 define("port", default=8888, help="run on the given port", type=int)
 
 class MainHandler(tornado.web.RequestHandler):
-    
+
+    def on_finish(self):
+        db.session.remove()
+
     def prepare(self):
         self.page = None
         self.page_text = ''
