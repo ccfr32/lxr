@@ -23,7 +23,7 @@
 	{% if tree == i %}
 	&nbsp;<span class="tree-sel">{{i['name']}}</span>&nbsp;
 	{% else %}
-	&nbsp;<a class="treelink" href="/lxr/search/{{i['name']}}">{{i['name']}}</a>&nbsp;	
+	&nbsp;<a class="treelink" href="/lxr/source/{{i['name']}}">{{i['name']}}</a>&nbsp;	
 	{% end %}
 	{% end %}
       </td>
@@ -64,7 +64,9 @@
 	  <p class="compact">
 	    &nbsp;<label>Version:
 	      <select name="!v">
-		<option class="var-sel" selected>2.10.3</option>
+		{% for version in tree['versions'] %}
+		<option class="var-sel" selected>{{version}}</option>
+		{% end %}
 	      </select>
 	    </label>
 	    <button type="reset">Revert</button>&nbsp;&nbsp;
