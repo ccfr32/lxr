@@ -414,7 +414,7 @@ class Symbol(db.Model):
     
     symid = Column(Integer, nullable=False, primary_key=True)
     treeid = Column(Integer, nullable=False)
-    symname = Column(String(128), nullable=False)
+    symname = Column(String(255), nullable=False)
 
     def __init__(self, treeid, symname, symid=1):
         self.treeid = treeid

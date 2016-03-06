@@ -118,6 +118,7 @@ class Genxref(object):
 
 
     def symbols(self, pathname, version):
+        total_commit = 0
         _files = [(pathname, version)]
         while _files:
             pathname, version = _files.pop(0)
@@ -139,11 +140,18 @@ class Genxref(object):
                         self.symid += 1
                     o.set_indexed()
                     db.session.add(o)
+                    total_commit += 1
+                    if total_commit % 1000 == 0:
+                        print total_commit
+                        db.session.commit()
         db.session.commit()
+        print 
+        print
         symbolcache.load(self.treeid)
         
 
     def symref(self, pathname, version):
+        total_commit = 0
         _files = [(pathname, version)]
         while _files:
             pathname, version = _files.pop(0)
@@ -166,13 +174,21 @@ class Genxref(object):
                         db.session.add(ref)
                     o.set_refered()
                     db.session.add(o)
+                    total_commit += 1
+                    if total_commit % 1000 == 0:
+                        db.session.commit()
+                        print total_commit
         db.session.commit()
+        print 
 
 
                     
 if __name__ == "__main__":
     from conf import config, trees
+    import sys
 
-    tree = trees['redispy']
+    treename = sys.argv[1]
+
+    tree = trees[treename]
     g = Genxref(config, tree)
 

@@ -46,6 +46,7 @@ class LangCache(object):
     def get_typeid(self, lang, desc):
         typeid = self.cache.get((lang, desc))
         if typeid is None:
+            print lang, desc
             return None
         return typeid
 
