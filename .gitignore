@@ -2,3 +2,5 @@
 conf.py
 conf.py.backup
 *base.html
+data/source/*
+data/index/*
