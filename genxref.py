@@ -31,7 +31,7 @@ class Genxref(object):
         
         self.init_files('/', self.version)
         # 建立swish
-        # self.gensearch(self.version)
+        self.gensearch(self.version)
         # ctags 符号
         self.symbols('/', self.version)
         # sym ref
