@@ -278,7 +278,7 @@ class SQLAlchemy(object):
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base()
         
-        self.engine = sqlalchemy.create_engine(engine_url, echo=echo, pool_recycle=pool_recycle, pool_size=pool_size)
+        self.engine = sqlalchemy.create_engine(engine_url, echo=echo) #, pool_recycle=pool_recycle, pool_size=pool_size)
 
         _include_sqlalchemy(self)
 
@@ -305,11 +305,12 @@ class SQLAlchemy(object):
         self.Model.metadata.drop_all(bind=self.engine)
 
 
-DBURI = 'mysql+mysqldb://%s:%s@%s:3306/%s?charset=utf8' % (
-    config['dbuser'],
-    config['dbpass'],
-    config['dbhost'],
-    config['dbname'])
+#DBURI = 'mysql+mysqldb://%s:%s@%s:3306/%s?charset=utf8' % (
+#    config['dbuser'],
+#    config['dbpass'],
+#    config['dbhost'],
+#    config['dbname'])
+DBURI = 'sqlite:///./lxr.db'
 
 db = SQLAlchemy(DBURI)
         
