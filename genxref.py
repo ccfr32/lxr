@@ -31,7 +31,7 @@ class Genxref(object):
         
         self.init_files('/', self.version)
         # 建立swish
-        self.gensearch(self.version)
+        # self.gensearch(self.version)
         # ctags 符号
         self.symbols('/', self.version)
         # sym ref
@@ -54,6 +54,7 @@ class Genxref(object):
             assert LangType.query.get_or_create(k, '') is not None
             for desc in v.typemap.values():
                 assert LangType.query.get_or_create(k, desc) is not None
+        print self.parses
         langcache.load()
         
 
@@ -172,11 +173,16 @@ class Genxref(object):
                             continue
                         ref = Ref(_symid, o.fileid, line)
                         db.session.add(ref)
+                        total_commit += 1
+                        if total_commit % 1000 == 0:
+                            db.session.commit()
                     o.set_refered()
                     db.session.add(o)
                     total_commit += 1
                     if total_commit % 1000 == 0:
                         db.session.commit()
+
+                    if total_commit % 10000 == 0:
                         print total_commit
         db.session.commit()
         print 

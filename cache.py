@@ -64,7 +64,7 @@ class BaseCache(object):
 
 
 class SimpleCache(BaseCache):
-    def __init__(self, threshold=100000, timeout=86400*30):
+    def __init__(self, threshold=1000000, timeout=86400*30):
         BaseCache.__init__(self, timeout)
         self._cache = {}
         self._threshold = threshold
@@ -83,7 +83,7 @@ class SimpleCache(BaseCache):
     def set(self, key, value, timeout=None):
         if timeout is None:
             timeout = self.timeout
-        self._prune()
+        #self._prune()
         self._cache[key] = (time() + timeout, pickle.dumps(value, 
             pickle.HIGHEST_PROTOCOL))
     
