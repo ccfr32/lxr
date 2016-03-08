@@ -310,7 +310,9 @@ class SQLAlchemy(object):
 #    config['dbpass'],
 #    config['dbhost'],
 #    config['dbname'])
-DBURI = 'sqlite:///./lxr.db'
+
+import os
+DBURI = 'sqlite:///' + os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lxr.db')
 
 db = SQLAlchemy(DBURI)
         

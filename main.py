@@ -239,6 +239,10 @@ class MainHandler(tornado.web.RequestHandler):
         args[1] treename
         '''
         self.page = args[0]
+        if self.page == 'index':
+            self.return_index_page()
+            return
+
         self.tree = conf.trees.get(args[1])
         self.tree_id = treecache.get_treeid(self.tree['name'], self.tree['version'])
         self.versioin = self.tree['version']

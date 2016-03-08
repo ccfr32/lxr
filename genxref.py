@@ -176,11 +176,13 @@ class Genxref(object):
                         total_commit += 1
                         if total_commit % 1000 == 0:
                             db.session.commit()
+                            print total_commit
                     o.set_refered()
                     db.session.add(o)
                     total_commit += 1
                     if total_commit % 1000 == 0:
                         db.session.commit()
+                        print total_commit
 
                     if total_commit % 10000 == 0:
                         print total_commit
