@@ -16,7 +16,7 @@
   (either belonging to a case-insensitive language or differing in case).
 </p>
 
-<form method="get" action="$varbtnaction">
+<form method="get" action="/lxr/ident/{{tree['name']}}">
   <p>
     <label>
       <b>Identifier: </b>
@@ -47,7 +47,7 @@
   {% end %}
 </table>
 <p>
-  $occurs declarations in {{len(defs)}} files.
+  {{ len(defs) }} declarations in {{len(defs)}} files.
 </p>
 
 <h3>References:</h3>
@@ -58,13 +58,17 @@
   </tr>
   {% for ref in refs %}
   <tr>
-    <td class="identfile">{% raw ref[0] %}</td>
-    <td class="identline">{% raw ref[1] %}</td>
+    <td class="identfile">{% raw ref[0][0] %}</td>
+    <td class="identline">
+      {% for item in ref %}
+      {% raw item[1] %}
+      {% end %}
+    </td>
   </tr>
   {% end %}
 </table>
 <p>
-  $occurs references in {{len(refs)}} files.
+  {{sum([len(ref) for ref in refs])}} references in {{len(refs)}} files.
 </p>
 
 {% end %}

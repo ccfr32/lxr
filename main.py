@@ -74,7 +74,7 @@ class MainHandler(tornado.web.RequestHandler):
             symid = symbolcache.get_symid(self.tree_id, ident)
         if not symid:
             defs = []
-            refs = []
+            refs = {}
         else:
             objs = Definitions.query.filter(Definitions.symid==symid).all()
             defs = []
@@ -96,19 +96,21 @@ class MainHandler(tornado.web.RequestHandler):
                 )
 
             objs = Ref.query.filter(Ref.symid==symid).all()
-            refs = []
+            refs = {}
             for o in objs:
+
                 treeid, filename = filecache.get_treeid_filename(o.fileid)
                 if treeid is None and filename is None:
                     filecache.load(self.tree_id)
                     treeid, filename = filecache.get_treeid_filename(o.fileid)
-                refs.append(
-                    (self._identfile(filename),
-                     self._identline(filename, o.line)
-                    )
-                )
+                item = (self._identfile(filename), self._identline(filename, o.line))
+                if o.fileid in refs:
+                    refs[o.fileid].append(item)
+                else:
+                    refs[o.fileid] = [item]
+                                          
         self.detail['defs'] = defs
-        self.detail['refs'] = refs
+        self.detail['refs'] = refs.values()
         self.detail['ident'] = ident
         self.render("ident.html", **self.detail)
 
@@ -194,7 +196,19 @@ class MainHandler(tornado.web.RequestHandler):
         html += '''</pre>'''
         return html
 
+    def _calc_text_file(self):
+        html = '''<pre class="filecontent">'''
+        fp = self.files.getfp(self.reqfile, self.versioin)
+        html += fp.read()
+        fp.close()
+        html += '''</pre>'''
+        return html
+        
+
     def _calc_source_content(self):
+        if self.get_argument('raw', None) == '1':
+            return self._calc_text_file()
+    
         if self.files.isdir(self.reqfile, self.versioin):
             return self._calc_dir_content()
         elif self.files.parseable(self.reqfile, self.versioin):
