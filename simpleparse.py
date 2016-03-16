@@ -59,6 +59,9 @@ class SimpleParse(object):
 
 
     def _multilinetwist(self, frag, css):
+        if css == 'string' or css == 'comment':
+            frag = frag.replace("<", "&lt;").replace(">", "&gt;")
+            
         ss = '''<span class="%s">%s</span>''' % (css, frag)
         ss = ss.replace("\n", '</span>\n<span class="%s">' % css)
         ss = ss.replace('<span class="%s"></span>' % css, '')
