@@ -24,8 +24,9 @@ define("port", default=8888, help="run on the given port", type=int)
 
 
 current_treeid = 1
-symbolcache.load(current_treeid)
-filecache.load(current_treeid)
+for i in xrange(1, 6):
+    symbolcache.load(i)
+    filecache.load(i)
 
 
 class MainHandler(tornado.web.RequestHandler):
