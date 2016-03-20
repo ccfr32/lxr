@@ -20,10 +20,13 @@ from models import Symbol, Ref, Definitions, db
 
 from dbcache import treecache, langcache, filecache, symbolcache
 
-symbolcache.load(1)
-filecache.load(1)
-
 define("port", default=8888, help="run on the given port", type=int)
+
+
+current_treeid = 1
+symbolcache.load(current_treeid)
+filecache.load(current_treeid)
+
 
 class MainHandler(tornado.web.RequestHandler):
 

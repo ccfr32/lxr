@@ -19,27 +19,28 @@ class Genxref(object):
         self.files = Files(tree)
         self.filestype = {}
         self.tree = tree
-        self.version = tree['version']
         self.commit_cnt = 0
         self.MAX_COMMIT = 1000        
         self.config = config
         self.symid = Symbol.next_symid()
 
+
+    def main(self, version):
         self.init_tree()
         self.init_lang()
         self.pathname_to_obj = {}
         
-        self.init_files('/', self.version)
+        self.init_files('/', version)
         # 建立swish
-        self.gensearch(self.version)
+        self.gensearch(version)
         # ctags 符号
-        self.symbols('/', self.version)
+        self.symbols('/', version)
         # sym ref
-        self.symref('/', self.version)
+        self.symref('/', version)
 
 
     def init_tree(self):
-        self.treeid = treecache.get_treeid(tree['name'], tree['version'])
+        self.treeid = treecache.get_treeid(self.tree['name'], tree['version'])
         if self.treeid is None:
             self.treeid = Tree.query.get_treeid(tree['name'], tree['version'])
             assert self.treeid is not None
@@ -196,7 +197,14 @@ if __name__ == "__main__":
     import sys
 
     treename = sys.argv[1]
+    if len(sys.argv) >= 3:
+        version = sys.argv[2]
+    else:
+        version = None
 
     tree = trees[treename]
+    if version not in tree['versions']:
+        version = tree['version']
     g = Genxref(config, tree)
-
+    g.main(version)
+    

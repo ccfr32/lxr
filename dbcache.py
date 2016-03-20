@@ -87,7 +87,7 @@ class SymbolCache(object):
     def __init__(self, treeid=None):
         self.cache = SimpleCache()
         if treeid:
-            slef.load(treeid)
+            self.load(treeid)
             
     def load(self, treeid):
         for i in Symbol.query.filter(Symbol.treeid==treeid).all():
