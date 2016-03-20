@@ -31,8 +31,9 @@ class Genxref(object):
         self.pathname_to_obj = {}
         
         self.init_files('/', version)
+
         # 建立swish
-        self.gensearch(version)
+        # self.gensearch(version)
         # ctags 符号
         self.symbols('/', version)
         # sym ref
