@@ -22,11 +22,12 @@ from dbcache import treecache, langcache, filecache, symbolcache
 
 define("port", default=8888, help="run on the given port", type=int)
 
-
-current_treeid = 1
-for i in xrange(1, 6):
-    symbolcache.load(i)
-    filecache.load(i)
+for name in conf.trees:
+    tree = conf.trees[name]
+    if tree.get('display', False):
+        tree_id = treecache.get_treeid(tree['name'], tree['version'])
+        symbolcache.load(tree_id)
+        filecache.load(tree_id)
 
 
 class MainHandler(tornado.web.RequestHandler):
