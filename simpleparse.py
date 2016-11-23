@@ -403,6 +403,7 @@ class CParse(SimpleParse):
             elif self.is_ident(i):
                 kk.append(self.get_ident_link(i))
             else:
+                i = i.replace("<", "&lt;").replace(">", "&gt;")
                 kk.append(i)
         return ''.join(kk)
 
@@ -508,6 +509,7 @@ class CPPParse(SimpleParse):
             elif self.is_ident(i):
                 kk.append(self.get_ident_link(i))
             else:
+                i = i.replace("<", "&lt;").replace(">", "&gt;")
                 kk.append(i)
         return ''.join(kk)
 
