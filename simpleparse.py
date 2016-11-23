@@ -23,7 +23,7 @@ def find_escape_char(s, right, left):
         return False
     return True
 
-            
+
 class SimpleParse(object):
 
     def __init__(self, config, tree):
@@ -40,18 +40,18 @@ class SimpleParse(object):
         self.maxchar = 0
 
         self.frags = []
-        
+
         self.open_re = re.compile("|".join(['(%s)' % i['open'] for i in self.spec]), re.M)
 
-        
+
     def parse_file(self, filename, release_id):
         fp = self.files.getfp(filename, release_id)
         buf = fp.read()
         fp.close()
         self.parse(buf, filename, release_id)
 
-    
-    
+
+
     def get_line_html(self, line, width=4):
         line = '%04d' % line
         html = '''<a class='fline' name="%s">%s</a> ''' % (line, line)
@@ -61,12 +61,12 @@ class SimpleParse(object):
     def _multilinetwist(self, frag, css):
         if css == 'string' or css == 'comment':
             frag = frag.replace("<", "&lt;").replace(">", "&gt;")
-            
+
         ss = '''<span class="%s">%s</span>''' % (css, frag)
         ss = ss.replace("\n", '</span>\n<span class="%s">' % css)
         ss = ss.replace('<span class="%s"></span>' % css, '')
         return ss
-    
+
 
     def get_include_link(self, word, path):
         html = '''<a class='include' href="/lxr/source/%s%s">%s</a>''' % (self.tree['name'], path, word)
@@ -77,7 +77,7 @@ class SimpleParse(object):
         html = '''<a class='fid' href="/lxr/ident/%s?_i=%s">%s</a>''' % (self.tree['name'], ident, ident)
         return html
 
-    
+
     def get_reserved_link(self, word):
         if self.is_reserved(word):
             return '<span class="reserved">%s</span>' % word
@@ -89,11 +89,11 @@ class SimpleParse(object):
         if rv is None:
             return False
         return True
-    
+
 
     def is_reserved(self, word):
         return word in self.reserved
-    
+
     def get_idents(self, buf):
         lines = buf.split('\n')
         line_no = 0
@@ -110,21 +110,21 @@ class SimpleParse(object):
                     continue
                 kk.append((i, line_no))
         return kk
-                
+
 
     def _parse_code(self, frag):
         raise Exception("Not Impl")
-    
+
     def _is_package(self, word):
         return word != 'from' and word != 'import' and (word[0] == '.' or word[0] in string.letters)
-    
-    
+
+
 
     def parse(self, buf, filename='', release_id=''):
         if filename and release_id:
             self.filename = filename
             self.release_id = release_id
-            
+
         self.buf = buf
         self.pos = 0
         self.start = 0
@@ -132,7 +132,7 @@ class SimpleParse(object):
         self.maxchar = len(buf)
 
         self.frags = []
-        
+
         while self.pos < self.maxchar:
             open_match = self.open_re.search(self.buf, self.pos, self.maxchar)
             if open_match:
@@ -173,14 +173,14 @@ class SimpleParse(object):
                 frag = self.buf[self.pos:]
                 self.frags.append(('code', frag))
                 self.pos = self.maxchar
-    
+
         _result = ''.join([i[1] for i in self.frags])
         assert _result == buf
 
 
     def _parse_include(self, frag):
         raise Exception("Not Impl")
-        
+
 
     def out(self):
         head = '<pre class="filecontent">'
@@ -203,7 +203,7 @@ class SimpleParse(object):
         while tt and (tt[-1] == '' or tt[-1] == '\n'):
             tt.pop()
         linewidth = max(len(str(len(tt))), 4)
-        
+
         line = 1
         htmls = [self.get_line_html(line, linewidth)]
         for i in tt:
@@ -214,8 +214,8 @@ class SimpleParse(object):
         htmls.insert(0, head)
         htmls.append(tail)
         return ''.join(htmls)
-        
-    
+
+
 class PythonParse(SimpleParse):
 
     lang = 'python'
@@ -235,7 +235,7 @@ class PythonParse(SimpleParse):
         {'open': "\\bimport\\b", 'close': '\n', 'type': 'include'},
         {'open': "\\bfrom\\b", 'close': '\n', 'type': 'include'}
     ]
-        
+
     typemap = {
         'c': 'class',
         'f': 'function',
@@ -243,7 +243,7 @@ class PythonParse(SimpleParse):
         'm': 'class member',
         'v': 'variable'
     }
-    
+
     def __init__(self, config, tree):
         super(PythonParse, self).__init__(config, tree)
 
@@ -253,6 +253,11 @@ class PythonParse(SimpleParse):
         for i in ss:
             if not i:
                 continue
+            if i == '<':
+                i = "&lt;"
+            elif i == '>':
+                i = "&gt;"
+
             if self.is_reserved(i):
                 kk.append(self.get_reserved_link(i))
             elif self.is_ident(i):
@@ -262,7 +267,7 @@ class PythonParse(SimpleParse):
         return ''.join(kk)
 
 
-        
+
     def _parse_include(self, frag):
         ss = self.blankre.split(frag)
         kk = []
@@ -302,7 +307,7 @@ class PythonParse(SimpleParse):
             else:
                 kk.append(i)
         return ''.join(kk)
-        
+
 
 class CParse(SimpleParse):
 
@@ -381,13 +386,18 @@ class CParse(SimpleParse):
                 kk.append(i)
         return ''.join(kk)
 
-    
+
     def _parse_code(self, frag):
         ss = self.identdef.split(frag)
         kk = []
         for i in ss:
             if not i:
                 continue
+            if i == '<':
+                i = "&lt;"
+            elif i == '>':
+                i = "&gt;"
+
             if self.is_reserved(i):
                 kk.append(self.get_reserved_link(i))
             elif self.is_ident(i):
@@ -396,7 +406,7 @@ class CParse(SimpleParse):
                 kk.append(i)
         return ''.join(kk)
 
-    
+
 
 class CPPParse(SimpleParse):
 
@@ -424,7 +434,7 @@ class CPPParse(SimpleParse):
         {"open": "'", "close": "'", "type": "string"},
         {"open": '#include', "close": '\n', "type": "include"}
     ]
-    
+
     typemap = {
         'c': 'class',
         'd': 'macro (un)definition',
@@ -487,6 +497,12 @@ class CPPParse(SimpleParse):
         for i in ss:
             if not i:
                 continue
+
+            if i == '<':
+                i = "&lt;"
+            elif i == '>':
+                i = "&gt;"
+
             if self.is_reserved(i):
                 kk.append(self.get_reserved_link(i))
             elif self.is_ident(i):
@@ -502,8 +518,8 @@ parses = {
     CPPParse.lang: CPPParse
 }
 
-    
-    
+
+
 if __name__ == "__main__":
     from conf import config, trees
     for filename in sys.argv[1:]:
@@ -513,10 +529,10 @@ if __name__ == "__main__":
         parse = PythonParse(config, trees['redispy'])
         parse.parse(buf)
 
-    
-        
-        
 
 
-            
-            
+
+
+
+
+

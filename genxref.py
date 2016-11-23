@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+text_factory = str
+
 import os
 import subprocess
 
